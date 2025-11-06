@@ -80,6 +80,54 @@ pipeline {
             }
         }
     }
+    // =========================================================
+            // 7️⃣ DEPLOY WAR TO TOMCAT (Windows)
+            // =========================================================
+            stage('Deploy WAR to Tomcat') {
+                steps {
+                    script {
+                        echo "🚀 Copiando WAR para a pasta do Tomcat..."
+
+                        // Caminhos configuráveis
+                        def sourceWar = "build\\libs\\blogqateste.war"
+                        def tomcatWebapps = "C:\\apache-tomcat-11.0.11\\webapps"
+
+                        // Copia o WAR gerado para o Tomcat
+                        bat """
+                            echo Copiando arquivo WAR para o Tomcat...
+                            copy /Y "${sourceWar}" "${tomcatWebapps}\\blogqateste.war"
+                        """
+
+                        // Reinicia o serviço Tomcat
+                        bat """
+                            echo Reiniciando serviço Tomcat...
+                            net stop Tomcat11
+                            net start Tomcat11
+                        """
+                    }
+                }
+            }
+
+            // =========================================================
+            // 8️⃣ DEPLOY TO TOMCAT (Script-based)
+            // =========================================================
+            stage('Deploy to Tomcat via Script') {
+                when {
+                    branch 'main'
+                }
+                steps {
+                    script {
+                        echo "🚀 Iniciando deploy automático no Tomcat 11..."
+                        if (isUnix()) {
+                            sh './scripts/deploy_tomcat.sh'
+                        } else {
+                            bat 'powershell -ExecutionPolicy Bypass -File deploy_tomcat.ps1'
+                        }
+                        echo "✅ Deploy finalizado com sucesso! WAR atualizado no Tomcat 🎯"
+                    }
+                }
+            }
+        }
 
     post {
         success {
