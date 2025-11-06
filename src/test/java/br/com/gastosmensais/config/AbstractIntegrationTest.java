@@ -7,7 +7,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
-@TestConfiguration
 public class AbstractIntegrationTest {
 
     private static final MongoDBContainer mongoDBContainer;
