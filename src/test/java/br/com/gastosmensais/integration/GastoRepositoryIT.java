@@ -4,6 +4,7 @@ import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.dto.gasto.response.GastoResponseDTO;
 import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.repository.GastoRepository;
+import br.com.gastosmensais.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,15 +29,7 @@ public class GastoRepositoryIT extends AbstractIntegrationTest {
 
     @Test
     void deveSalvarGasto() {
-        Gasto gasto = Gasto.builder()
-                .descricao("Gasto de teste")
-                .valorTotal(new BigDecimal("100.00"))
-                .categoria("Categoria de teste")
-                .tipoPagamento("Tipo de pagamento de teste")
-                .parcelas(1)
-                .dataCompra(LocalDateTime.now())
-                .build();
-
+        var gasto = TestDataFactory.criarGastoEntityPadrao();
         gastoRepository.save(gasto);
 
         var gastoSalvo = GastoResponseDTO.fromRequest(gasto);
@@ -51,14 +44,7 @@ public class GastoRepositoryIT extends AbstractIntegrationTest {
 
     @Test
     void deveBuscarGastoPorId() {
-        Gasto gasto = Gasto.builder()
-                .descricao("Gasto de teste")
-                .valorTotal(new BigDecimal("100.00"))
-                .categoria("Categoria de teste")
-                .tipoPagamento("Tipo de pagamento de teste")
-                .parcelas(1)
-                .dataCompra(LocalDateTime.now())
-                .build();
+        var gasto = TestDataFactory.criarGastoEntityPadrao();
 
         gastoRepository.save(gasto);
 

@@ -5,6 +5,7 @@ import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
 import br.com.gastosmensais.repository.ParcelaRepository;
 import br.com.gastosmensais.service.ParcelaService;
+import br.com.gastosmensais.util.TestDataFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,15 +27,7 @@ public class ParcelaServiceIT extends AbstractIntegrationTest {
 
     @Test
     void deveGerarParcelasCorretamente() {
-        var gasto = new GastoRequestDTO(
-                "Celular",
-                new BigDecimal("3000.00"),
-                "Eletrônico",
-                "Cartão",
-                3,
-                LocalDateTime.of(2025, 11, 6, 0, 0)
-
-        );
+       GastoRequestDTO gasto = TestDataFactory.criarGastoRequestPadrao();
 
         var parcelas = parcelaService.gerarEGuardarParcelas(gasto, "Gastos123");
         var parcelasSalva = parcelaRepository.findByGastoId("Gastos123");
