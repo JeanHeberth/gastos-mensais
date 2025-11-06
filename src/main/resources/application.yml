@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: gastos-mensais
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/gastos-mensais
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
+
+server:
+  port: 8089
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.springframework.data: DEBUG
+
+
