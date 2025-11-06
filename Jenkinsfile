@@ -11,7 +11,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 echo "📦 Iniciando checkout do código-fonte..."
@@ -33,9 +32,29 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // ☁️ UPLOAD TO CODECOV
-        // =========================================================
+        stage('Reports & Coverage') {
+            steps {
+                script {
+                    echo "📊 Gerando relatórios de cobertura Jacoco..."
+                    if (isUnix()) {
+                        sh './gradlew jacocoTestReport -x jacocoTestCoverageVerification'
+                    } else {
+                        bat 'gradlew jacocoTestReport -x jacocoTestCoverageVerification'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit '**/build/test-results/test/TEST-*.xml'
+                    publishHTML(target: [
+                        reportDir: 'build/reports/jacoco/test/html',
+                        reportFiles: 'index.html',
+                        reportName: 'Jacoco Coverage Report'
+                    ])
+                }
+            }
+        }
+
         stage('Upload Coverage to Codecov') {
             steps {
                 script {
