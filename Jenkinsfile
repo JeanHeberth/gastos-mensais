@@ -2,16 +2,12 @@ pipeline {
     agent any
 
     tools {
-        // Nome do JDK configurado no Jenkins (Gerenciar Jenkins → Ferramentas Globais)
         jdk 'JDK21'
     }
 
     environment {
-        // Define variável para uso em logs ou integrações futuras
         PROJECT_NAME = 'gastos-mensais'
-        CODECOV_TOKEN = credentials('CODECOV')
-        GITHUB_TOKEN = credentials('GITHUB_TOKEN')
-        ORG_GRADLE_JAVA_HOME = "${env.JAVA_HOME}"
+        CODECOV_TOKEN = credentials('CODECOV_TOKEN') // configure no Jenkins → Credenciais
     }
 
     stages {
@@ -25,8 +21,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo "🏗️  Executando build Gradle..."
-                // Em ambiente Windows, usamos 'bat' no lugar de 'sh'
+                echo "🏗️ Executando build Gradle..."
                 bat 'gradlew clean build -x test'
             }
         }
@@ -34,14 +29,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo "🧪 Executando testes..."
-                bat 'gradlew test'
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                echo "📁 Arquivando artefatos gerados..."
-                archiveArtifacts artifacts: '**/build/libs/*.jar', fingerprint: true
+                bat 'gradlew test jacocoTestReport'
             }
         }
 
@@ -65,6 +53,13 @@ pipeline {
                 }
             }
         }
+
+        stage('Archive Artifacts') {
+            steps {
+                echo "📁 Arquivando artefatos..."
+                archiveArtifacts artifacts: '**/build/libs/*.jar', fingerprint: true
+            }
+        }
     }
 
     post {
@@ -72,7 +67,7 @@ pipeline {
             echo "✅ Pipeline concluído com sucesso para ${env.PROJECT_NAME}!"
         }
         failure {
-            echo "❌ Falha detectada no pipeline de ${env.PROJECT_NAME}. Verifique os logs."
+            echo "❌ Falha detectada no pipeline. Verifique os logs."
         }
         always {
             echo "🧹 Finalizando execução do pipeline."
