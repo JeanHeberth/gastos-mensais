@@ -66,7 +66,7 @@ pipeline {
                             echo Baixando Codecov para Windows...
                             curl -L -o codecov.exe https://uploader.codecov.io/latest/windows/codecov.exe
                             echo Enviando relatório de cobertura...
-                            codecov.exe -t %CODECOV_TOKEN% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
+                            codecov.exe -t %CODECOV_TOKEN_GASTOS_MENSAIS% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
                         '''
                     }
                 }
