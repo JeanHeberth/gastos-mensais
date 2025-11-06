@@ -21,6 +21,6 @@ public class Gasto {
     private BigDecimal valorTotal;
     private String categoria;
     private String tipoPagamento;
-    private Integer parcelas;
     private LocalDateTime dataCompra;
+    private Integer parcelas;
 }
