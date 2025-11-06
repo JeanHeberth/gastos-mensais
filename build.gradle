@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'jacoco'
+    id 'war'
 
 }
 
@@ -61,4 +62,11 @@ jacocoTestReport {
             required = false
         }
     }
+}
+
+war {
+    enabled = true // ✅ ativa a geração do WAR
+    archiveBaseName.set('gastos-mensais') // nome do arquivo final .war
+    archiveVersion.set("")                 // ✅ remove versão do nome
+    archiveClassifier.set("")              // ✅ remove "-plain" ou qualquer sufixo
 }
