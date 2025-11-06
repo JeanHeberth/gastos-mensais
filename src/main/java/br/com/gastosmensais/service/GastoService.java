@@ -36,6 +36,13 @@ public class GastoService {
                 parcelas
         );
     }
+
+    public List<GastoResponseDTO> listarGastos() {
+        List<Gasto> gastos = gastoRepository.findAll();
+        return gastos.stream()
+                .map(GastoResponseDTO::fromRequest)
+                .toList();
+    }
 }
 
 
