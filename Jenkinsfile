@@ -6,32 +6,83 @@ pipeline {
     }
 
     environment {
-        PROJECT_NAME = 'gastos-mensais'
-        CODECOV_TOKEN = credentials('CODECOV_TOKEN_GASTOS_MENSAIS') // configure no Jenkins → Credenciais
+        CODECOV_TOKEN = credentials('CODECOV_TOKEN_GASTOS_MENSAIS')
+        GITHUB_TOKEN  = credentials('GITHUB_TOKEN')
     }
 
     stages {
+
+        // =========================================================
+        // 1️⃣ CHECKOUT
+        // =========================================================
         stage('Checkout') {
             steps {
-                echo "📦 Iniciando checkout do código-fonte..."
+                echo "🔄 Clonando o repositório..."
                 checkout scm
             }
         }
 
+        // =========================================================
+        // 2️⃣ BUILD
+        // =========================================================
         stage('Build') {
             steps {
-                echo "🏗️ Executando build Gradle..."
-                bat 'gradlew clean build -x test'
+                script {
+                    echo "⚙️ Executando build do projeto..."
+                    if (isUnix()) {
+                        sh './gradlew clean build -x test'
+                    } else {
+                        bat 'gradlew clean build -x test'
+                    }
+                }
             }
         }
 
-        stage('Test') {
+        // =========================================================
+        // 3️⃣ UNIT TESTS - SERVICE
+        // =========================================================
+        stage('Unit Tests - Service') {
             steps {
-                echo "🧪 Executando testes..."
-                bat 'gradlew test jacocoTestReport'
+                script {
+                    echo "🧪 Executando testes unitários da camada Service..."
+                    if (isUnix()) {
+                        sh './gradlew test --tests "br.com.gastosmensais.service.*"'
+                    } else {
+                        bat 'gradlew test --tests "br.com.gastosmensais.service.*"'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit '**/build/test-results/test/TEST-*.xml'
+                }
             }
         }
 
+        // =========================================================
+        // 4️⃣ INTEGRATION TESTS
+        // =========================================================
+        stage('Integration Tests') {
+            steps {
+                script {
+                    echo "🔗 Executando testes de integração..."
+                    if (isUnix()) {
+                        sh './gradlew test --tests "br.com.gastosmensais.controller.*"'
+                    } else {
+                        bat 'gradlew test --tests "br.com.gastosmensais.controller.*"'
+                    }
+                }
+            }
+            post {
+                always {
+                    junit '**/build/test-results/test/TEST-*.xml'
+                }
+            }
+        }
+
+        // =========================================================
+        // 5️⃣ REPORTS & COVERAGE
+        // =========================================================
         stage('Reports & Coverage') {
             steps {
                 script {
@@ -55,6 +106,9 @@ pipeline {
             }
         }
 
+        // =========================================================
+        // 6️⃣ UPLOAD TO CODECOV
+        // =========================================================
         stage('Upload Coverage to Codecov') {
             steps {
                 script {
@@ -66,7 +120,7 @@ pipeline {
                             echo Baixando Codecov para Windows...
                             curl -L -o codecov.exe https://uploader.codecov.io/latest/windows/codecov.exe
                             echo Enviando relatório de cobertura...
-                            codecov.exe -t %CODECOV_TOKEN_GASTOS_MENSAIS% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
+                            codecov.exe -t %CODECOV_TOKEN% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
                         '''
                     }
                 }
@@ -74,7 +128,7 @@ pipeline {
         }
 
         // =========================================================
-        // DEPLOY WAR TO TOMCAT (Windows)
+        // 7️⃣ DEPLOY WAR TO TOMCAT (Windows)
         // =========================================================
         stage('Deploy WAR to Tomcat') {
             steps {
@@ -82,7 +136,7 @@ pipeline {
                     echo "🚀 Copiando WAR para a pasta do Tomcat..."
 
                     // Caminhos configuráveis
-                    def sourceWar = "build\\libs\\blogqateste.war"
+                    def sourceWar = "build\\libs\\gastos-mensais.war"
                     def tomcatWebapps = "C:\\apache-tomcat-11.0.11\\webapps"
 
                     // Copia o WAR gerado para o Tomcat
@@ -102,15 +156,14 @@ pipeline {
         }
 
         // =========================================================
-        // DEPLOY WAR TO TOMCAT (Windows)
+        // 8️⃣ DEPLOY TO TOMCAT (Script-based)
         // =========================================================
-
-        stage('Deploy to Tomcat via Script'){
-            when{
+        stage('Deploy to Tomcat via Script') {
+            when {
                 branch 'main'
             }
-            steps{
-                script{
+            steps {
+                script {
                     echo "🚀 Iniciando deploy automático no Tomcat 11..."
                     if (isUnix()) {
                         sh './scripts/deploy_tomcat.sh'
@@ -118,19 +171,23 @@ pipeline {
                         bat 'powershell -ExecutionPolicy Bypass -File deploy_tomcat.ps1'
                     }
                     echo "✅ Deploy finalizado com sucesso! WAR atualizado no Tomcat 🎯"
-                }   
+                }
             }
         }
+    }
 
+    // =========================================================
+    // 🔄 POST ACTIONS
+    // =========================================================
     post {
+        always {
+            echo '✅ Pipeline concluído.'
+        }
         success {
-            echo "✅ Pipeline concluído com sucesso para ${env.PROJECT_NAME}!"
+            echo '🎉 Todos os stages executados com sucesso!'
         }
         failure {
-            echo "❌ Falha detectada no pipeline. Verifique os logs."
-        }
-        always {
-            echo "🧹 Finalizando execução do pipeline."
+            echo '❌ Falha detectada no pipeline. Verifique os logs.'
         }
     }
 }
