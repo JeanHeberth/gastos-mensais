@@ -2,6 +2,7 @@ package br.com.gastosmensais.repository;
 
 import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.entity.Gasto;
+import br.com.gastosmensais.util.TestDataFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,14 +20,7 @@ class GastoRepositoryTest extends AbstractIntegrationTest {
 
     @Test
     void deveSalvarEGastoNoMongo() {
-        Gasto gasto = new Gasto();
-        gasto.setDescricao("Aluguel");
-        gasto.setValorTotal(new BigDecimal("1200.00"));
-        gasto.setCategoria("Moradia");
-        gasto.setTipoPagamento("Pix");
-        gasto.setParcelas(1);
-        gasto.setDataCompra(LocalDateTime.now());
-
+        var gasto = TestDataFactory.criarGastoEntityPadrao();
         Gasto salvo = gastoRepository.save(gasto);
         assertThat(salvo.getId()).isNotNull();
     }
