@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         PROJECT_NAME = 'gastos-mensais'
-        CODECOV_TOKEN = credentials('CODECOV_TOKEN') // configure no Jenkins → Credenciais
+        CODECOV_TOKEN = credentials('CODECOV') // configure no Jenkins → Credenciais
     }
 
     stages {
