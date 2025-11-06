@@ -2,6 +2,7 @@ package br.com.gastosmensais.controller;
 
 import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
+import br.com.gastosmensais.util.TestDataFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,20 +29,17 @@ class GastoControllerIT extends AbstractIntegrationTest {
 
     @Test
     void deveCriarGastoComSucesso() throws Exception {
-        GastoRequestDTO gastoRequestDTO = new GastoRequestDTO(
-                "Celular",
-                new BigDecimal("3000.00"),
-                "Eletrônico",
-                "Cartão",
-                3,
-                LocalDateTime.of(2025, 11, 6, 0, 0)
-        );
+        GastoRequestDTO request = TestDataFactory.criarGastoRequestPadrao();
 
         mockMvc.perform(post("/api/gastos")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(gastoRequestDTO)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.descricao").value("Celular"));
+                .andExpect(jsonPath("$.descricao").value("Notebook"))
+                .andExpect(jsonPath("$.valorTotal").value(6000.00))
+                .andExpect(jsonPath("$.categoria").value("Tecnologia"))
+                .andExpect(jsonPath("$.tipoPagamento").value("Cartão"))
+                .andExpect(jsonPath("$.parcelas").value(3));
     }
 }
 
