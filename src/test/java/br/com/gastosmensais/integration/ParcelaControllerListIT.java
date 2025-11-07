@@ -3,6 +3,7 @@ package br.com.gastosmensais.integration;
 import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.repository.ParcelaRepository;
+import br.com.gastosmensais.util.TestAuthUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ class ParcelaControllerListIT extends AbstractIntegrationTest {
     @Autowired
     private ParcelaRepository parcelaRepository;
 
+    @Autowired
+    private TestAuthUtil testAuthUtil;
+
     @BeforeEach
     void setup() {
         parcelaRepository.deleteAll();
@@ -49,8 +53,12 @@ class ParcelaControllerListIT extends AbstractIntegrationTest {
 
     @Test
     void deveListarParcelasPorGasto() throws Exception {
+
+        String token = testAuthUtil.gerarTokenParaUsuarioPadrao();
+
         mockMvc.perform(get("/gastos/{id}/parcelas", "gasto-xyz")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())

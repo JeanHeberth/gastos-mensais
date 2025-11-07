@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +53,13 @@ public class GastoService {
         return gastos.stream()
                 .map(GastoResponseDTO::fromRequest)
                 .toList();
+    }
+
+    public List<GastoResponseDTO> listarGastos() {
+        List<Gasto> gastos = gastoRepository.findAll();
+        return gastos.stream()
+                .map(GastoResponseDTO::fromRequest)
+                .collect(Collectors.toList());
     }
 }
 

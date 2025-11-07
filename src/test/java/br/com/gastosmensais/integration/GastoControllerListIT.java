@@ -1,6 +1,7 @@
 package br.com.gastosmensais.integration;
 
 import br.com.gastosmensais.config.AbstractIntegrationTest;
+import br.com.gastosmensais.util.TestAuthUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -31,6 +32,9 @@ class GastoControllerListIT extends AbstractIntegrationTest {
     @Autowired
     private GastoRepository gastoRepository;
 
+    @Autowired
+    private TestAuthUtil testAuthUtil;
+
     @BeforeEach
     void setup() {
         gastoRepository.deleteAll();
@@ -56,10 +60,14 @@ class GastoControllerListIT extends AbstractIntegrationTest {
 
     @Test
     void deveListarGastosPorMesEAno() throws Exception {
+        String token = testAuthUtil.gerarTokenParaUsuarioPadrao();
+
         mockMvc.perform(get("/gastos")
                         .param("mes", "11")
                         .param("ano", "2025")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token)
+                )
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
