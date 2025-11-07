@@ -2,6 +2,7 @@ package br.com.gastosmensais.integration;
 
 import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
+import br.com.gastosmensais.util.TestAuthUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,9 @@ class GastoControllerValidationIT extends AbstractIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private TestAuthUtil testAuthUtil;
+
     @Test
     void deveRetornarErroQuandoCamposForemInvalidos() throws Exception {
         // 🔹 Gasto com campos inválidos (simulando falha de validação)
@@ -39,9 +43,11 @@ class GastoControllerValidationIT extends AbstractIntegrationTest {
                 null // data nula → deve falhar com @NotNull
         );
 
+        String token = testAuthUtil.gerarTokenParaUsuarioPadrao();
         mockMvc.perform(post("/gastos")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestInvalido)))
+                        .content(objectMapper.writeValueAsString(requestInvalido))
+                        .header("Authorization", "Bearer " + token))
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Erro de validação"))

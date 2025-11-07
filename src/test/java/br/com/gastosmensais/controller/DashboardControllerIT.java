@@ -4,6 +4,7 @@ package br.com.gastosmensais.controller;
 import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.repository.GastoRepository;
+import br.com.gastosmensais.util.TestAuthUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,9 @@ class DashboardControllerIT extends AbstractIntegrationTest {
     @Autowired
     private GastoRepository gastoRepository;
 
+    @Autowired
+    private TestAuthUtil testAuthUtil;
+
     @BeforeEach
     void setup() {
         gastoRepository.deleteAll();
@@ -55,10 +59,14 @@ class DashboardControllerIT extends AbstractIntegrationTest {
 
     @Test
     void deveRetornarResumoMensal() throws Exception {
+
+        String token = testAuthUtil.gerarTokenParaUsuarioPadrao();
+
         mockMvc.perform(get("/gastos/resumo")
                         .param("mes", "11")
                         .param("ano", "2025")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalGastos").value(2000.00))
