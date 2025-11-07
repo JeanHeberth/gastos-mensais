@@ -40,4 +40,11 @@ public class ParcelaService {
                 .map(p -> new ParcelaResponseDTO(p.getNumero(), p.getValor(), p.getDataVencimento(), p.getGastoId()))
                 .toList();
     }
+
+    public List<ParcelaResponseDTO> listarParcelasPorGasto(String gastoId) {
+        return parcelaRepository.findByGastoId(gastoId)
+                .stream()
+                .map(ParcelaResponseDTO::fromRequest)
+                .toList();
+    }
 }
