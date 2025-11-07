@@ -18,6 +18,9 @@ spring:
       fail-on-empty-beans: false
       WRITE_DATES_AS_TIMESTAMPS: false
 
+jwt:
+  secret: minha-chave-super-secreta-e-segura-minha-chave-super-secreta-e-segura
+  expiration: 86400000
 
 logging:
   level:
