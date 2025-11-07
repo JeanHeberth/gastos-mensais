@@ -9,10 +9,15 @@ spring:
     name: gastos-mensais
   data:
     mongodb:
-      uri: mongodb://localhost:27017/gastos-mensais
+      uri: mongodb+srv://admin:LuizJoao123@cluster.y2vw5.mongodb.net/
+      data-base: gastos-mensais 
+
   jackson:
+    time-zone: UTC
     serialization:
       fail-on-empty-beans: false
+      WRITE_DATES_AS_TIMESTAMPS: false
+
 
 logging:
   level:
