@@ -8,6 +8,7 @@ import br.com.gastosmensais.repository.GastoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -37,8 +38,17 @@ public class GastoService {
         );
     }
 
-    public List<GastoResponseDTO> listarGastos() {
-        List<Gasto> gastos = gastoRepository.findAll();
+    public List<GastoResponseDTO> listarGastosPorPeriodo(Integer mes, Integer ano) {
+        List<Gasto> gastos;
+
+        if (mes != null && ano != null) {
+            LocalDateTime inicio = LocalDateTime.of(ano, mes, 1, 0, 0);
+            LocalDateTime fim = inicio.plusMonths(1);
+            gastos = gastoRepository.findByDataCompraBetween(inicio, fim);
+        } else {
+            gastos = gastoRepository.findAll();
+        }
+
         return gastos.stream()
                 .map(GastoResponseDTO::fromRequest)
                 .toList();

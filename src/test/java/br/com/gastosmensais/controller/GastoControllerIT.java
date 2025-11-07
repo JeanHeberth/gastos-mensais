@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc // ✅ agora está no local correto
+@AutoConfigureMockMvc
 class GastoControllerIT extends AbstractIntegrationTest {
 
     @Autowired
@@ -31,7 +31,7 @@ class GastoControllerIT extends AbstractIntegrationTest {
     void deveCriarGastoComSucesso() throws Exception {
         GastoRequestDTO request = TestDataFactory.criarGastoRequestPadrao();
 
-        mockMvc.perform(post("/api/gastos")
+        mockMvc.perform(post("/gastos")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
