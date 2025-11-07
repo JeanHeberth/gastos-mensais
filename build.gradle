@@ -66,9 +66,7 @@ jacocoTestReport {
     }
 }
 
-war {
-    enabled = true // ✅ ativa a geração do WAR
-    archiveBaseName.set('gastos-mensais') // nome do arquivo final .war
-    archiveVersion.set("")                 // ✅ remove versão do nome
-    archiveClassifier.set("")              // ✅ remove "-plain" ou qualquer sufixo
+bootWar{
+    enabled = true
+    archiveFileName = 'gastos-mensais.war'
 }
