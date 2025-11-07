@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
@@ -47,4 +49,25 @@ public class ParcelaService {
                 .map(ParcelaResponseDTO::fromRequest)
                 .toList();
     }
+
+    public List<ParcelaResponseDTO> buscarPorGastoId(String gastoId) {
+        return parcelaRepository.findByGastoId(gastoId)
+                .stream()
+                .map(ParcelaResponseDTO::fromRequest)
+                .collect(Collectors.toList());
+    }
+
+    public List<ParcelaResponseDTO> buscarPorMes(YearMonth mes) {
+        LocalDate inicio = mes.atDay(1);
+        LocalDate fim = mes.atEndOfMonth();
+
+        return parcelaRepository.findByDataVencimentoBetween(inicio, fim)
+                .stream()
+                .map(ParcelaResponseDTO::fromRequest)
+                .collect(Collectors.toList());
+    }
+
+
+
+
 }

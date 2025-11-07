@@ -10,4 +10,6 @@ public interface GastoRepository extends MongoRepository<Gasto, String> {
     List<Gasto> findByCategoria(String categoria);
 
     List<Gasto> findByDataCompraBetween(LocalDateTime inicio, LocalDateTime fim);
+//    List<Gasto> findAllByUsuarioId(String usuarioId);
+
 }
