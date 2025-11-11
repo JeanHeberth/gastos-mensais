@@ -2,12 +2,14 @@ package br.com.gastosmensais.service;
 
 import br.com.gastosmensais.dto.gasto.response.ResumoMensalResponseDTO;
 import br.com.gastosmensais.entity.Gasto;
+import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.repository.GastoRepository;
+import br.com.gastosmensais.repository.ParcelaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -16,30 +18,36 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DashboardService {
 
+    private final ParcelaRepository parcelaRepository;
     private final GastoRepository gastoRepository;
 
     public ResumoMensalResponseDTO gerarResumoMensal(Integer mes, Integer ano) {
-        LocalDateTime inicio = LocalDateTime.of(ano, mes, 1, 0, 0);
-        LocalDateTime fim = inicio.plusMonths(1);
+        LocalDate inicio = LocalDate.of(ano, mes, 1);
+        LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        List<Gasto> gastos = gastoRepository.findByDataCompraBetween(inicio, fim);
+        List<Parcela> parcelasDoMes = parcelaRepository.findByDataVencimentoBetween(inicio, fim);
 
-        BigDecimal total = gastos.stream()
-                .map(Gasto::getValorTotal)
+        BigDecimal totalMes = parcelasDoMes.stream()
+                .map(Parcela::getValor)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<String, BigDecimal> porCategoria = gastos.stream()
+        // Busca a categoria do gasto via gastoId
+        Map<String, BigDecimal> porCategoria = parcelasDoMes.stream()
                 .collect(Collectors.groupingBy(
-                        Gasto::getCategoria,
-                        Collectors.reducing(BigDecimal.ZERO, Gasto::getValorTotal, BigDecimal::add)
+                        p -> gastoRepository.findById(p.getGastoId())
+                                .map(Gasto::getCategoria)
+                                .orElse("Sem categoria"),
+                        Collectors.reducing(BigDecimal.ZERO, Parcela::getValor, BigDecimal::add)
                 ));
+
+        long quantidade = parcelasDoMes.size();
 
         return new ResumoMensalResponseDTO(
                 mes,
                 ano,
-                total,
+                totalMes,
                 porCategoria,
-                (long) gastos.size()
+                quantidade
         );
     }
 }
