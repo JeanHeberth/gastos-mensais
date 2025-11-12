@@ -2,11 +2,13 @@ package br.com.gastosmensais.service;
 
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
+import br.com.gastosmensais.repository.GastoRepository;
 import br.com.gastosmensais.repository.ParcelaRepository;
 import br.com.gastosmensais.util.TestDataFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
@@ -18,12 +20,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ParcelaServiceTest {
 
     private ParcelaService parcelaService;
+
+    @Mock
     private ParcelaRepository parcelaRepository;
+
+    @Mock
+    private GastoRepository gastoRepository;
 
     @BeforeEach
     void setUp() {
         parcelaRepository = Mockito.mock(ParcelaRepository.class);
-        parcelaService = new ParcelaService(parcelaRepository);
+        parcelaService = new ParcelaService(parcelaRepository, gastoRepository);
     }
 
     @Test

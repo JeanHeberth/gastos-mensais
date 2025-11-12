@@ -19,4 +19,7 @@ public class Parcela {
     private BigDecimal valor;
     private LocalDate dataVencimento;
     private String gastoId;
+    private String descricao;
+    private String categoria;
+
 }
