@@ -39,9 +39,9 @@ public class TestDataFactory {
     // --- PARCELAS ---
     public static List<ParcelaResponseDTO> criarParcelasPadrao() {
         return List.of(
-                new ParcelaResponseDTO(1, new BigDecimal("2000.00"), LocalDate.of(2025, 12, 6), "gasto-123"),
-                new ParcelaResponseDTO(2, new BigDecimal("2000.00"), LocalDate.of(2026, 1, 6), "gasto-123"),
-                new ParcelaResponseDTO(3, new BigDecimal("2000.00"), LocalDate.of(2026, 2, 6), "gasto-123")
+                new ParcelaResponseDTO(1, new BigDecimal("2000.00"), LocalDate.of(2025, 12, 6), "gasto-123", "Notebook", "Eletronico"),
+                new ParcelaResponseDTO(2, new BigDecimal("2000.00"), LocalDate.of(2026, 1, 6), "gasto-123", "Notebook", "Eletronico"),
+                new ParcelaResponseDTO(3, new BigDecimal("2000.00"), LocalDate.of(2026, 2, 6), "gasto-123", "Notebook", "Eletronico")
         );
     }
 }

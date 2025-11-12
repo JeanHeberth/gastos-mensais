@@ -9,14 +9,19 @@ public record ParcelaResponseDTO(
         Integer numero,
         BigDecimal valor,
         LocalDate dataVencimento,
-        String gastoId
+        String gastoId,
+        String descricao,
+        String categoria
+
 ) {
     public static ParcelaResponseDTO fromRequest(Parcela parcela) {
         return new ParcelaResponseDTO(
                 parcela.getNumero(),
                 parcela.getValor(),
                 parcela.getDataVencimento(),
-                parcela.getGastoId()
+                parcela.getGastoId(),
+                parcela.getDescricao(),
+                parcela.getCategoria()
         );
     }
 }

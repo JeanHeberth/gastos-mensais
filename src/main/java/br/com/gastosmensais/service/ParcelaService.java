@@ -2,7 +2,9 @@ package br.com.gastosmensais.service;
 
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
+import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.entity.Parcela;
+import br.com.gastosmensais.repository.GastoRepository;
 import br.com.gastosmensais.repository.ParcelaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,6 +14,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -20,6 +23,7 @@ import java.util.stream.IntStream;
 public class ParcelaService {
 
     private final ParcelaRepository parcelaRepository;
+    private final GastoRepository gastoRepository;
 
 
     public List<ParcelaResponseDTO> gerarEGuardarParcelas(GastoRequestDTO gasto, String gastoId) {
@@ -39,7 +43,7 @@ public class ParcelaService {
         parcelaRepository.saveAll(parcelas);
 
         return parcelas.stream()
-                .map(p -> new ParcelaResponseDTO(p.getNumero(), p.getValor(), p.getDataVencimento(), p.getGastoId()))
+                .map(p -> new ParcelaResponseDTO(p.getNumero(), p.getValor(), p.getDataVencimento(), p.getGastoId(), p.getDescricao(), p.getCategoria()))
                 .toList();
     }
 
@@ -61,13 +65,8 @@ public class ParcelaService {
         LocalDate inicio = mes.atDay(1);
         LocalDate fim = mes.atEndOfMonth();
 
-        return parcelaRepository.findByDataVencimentoBetween(inicio, fim)
-                .stream()
-                .map(ParcelaResponseDTO::fromRequest)
-                .collect(Collectors.toList());
+        return parcelaRepository.findParcelasComGastoByDataVencimentoBetween(inicio, fim);
     }
-
-
 
 
 }

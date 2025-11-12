@@ -6,7 +6,7 @@ import java.util.Map;
 public record ResumoMensalResponseDTO(
         Integer mes,
         Integer ano,
-        BigDecimal totalGastos,
+        BigDecimal total,
         Map<String, BigDecimal> porCategoria,
-        Long quantidadeGastos
+        Long quantidade
 ) {}
