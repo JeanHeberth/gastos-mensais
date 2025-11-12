@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/parcelas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200" ,  originPatterns = "*")
 public class ParcelaController {
 
     private final ParcelaService parcelaService;
