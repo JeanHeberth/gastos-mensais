@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173"
+        , originPatterns = "100.83.72.100"
+)
 @RestController
 @RequestMapping("/gastos")
 @RequiredArgsConstructor

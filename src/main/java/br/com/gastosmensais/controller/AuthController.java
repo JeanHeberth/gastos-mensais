@@ -17,7 +17,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173"
+        , originPatterns = "100.83.72.100"
+)
 public class AuthController {
 
     private final UsuarioRepository usuarioRepository;
