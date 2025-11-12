@@ -5,6 +5,7 @@ import br.com.gastosmensais.dto.gasto.response.GastoResponseDTO;
 import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
 import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.repository.GastoRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -60,6 +61,28 @@ public class GastoService {
         return gastos.stream()
                 .map(GastoResponseDTO::fromRequest)
                 .collect(Collectors.toList());
+    }
+
+    public GastoResponseDTO buscarPorId(String id) {
+        Gasto gasto = gastoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Gasto não encontrado"));
+        return GastoResponseDTO.fromRequest(gasto);
+    }
+
+    public GastoResponseDTO atualizarGasto(String id, @Valid GastoRequestDTO request) {
+        Gasto gasto = gastoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Gasto não encontrado"));
+        gasto.setDescricao(request.descricao());
+        gasto.setValorTotal(request.valorTotal());
+        gasto.setCategoria(request.categoria());
+        gasto.setTipoPagamento(request.tipoPagamento());
+        gasto.setParcelas(request.parcelas());
+        gasto.setDataCompra(request.dataCompra());
+        return GastoResponseDTO.fromRequest(gastoRepository.save(gasto));
+    }
+
+    public void deletarGasto(String id) {
+        gastoRepository.deleteById(id);
     }
 }
 
