@@ -2,14 +2,11 @@ package br.com.gastosmensais.controller;
 
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.dto.gasto.response.GastoResponseDTO;
-import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
 import br.com.gastosmensais.service.GastoService;
-import br.com.gastosmensais.service.ParcelaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,7 +18,6 @@ import java.util.List;
 public class GastoController {
 
     private final GastoService gastoService;
-    private final ParcelaService parcelaService;
 
     @PostMapping
     public ResponseEntity<GastoResponseDTO> criar(@RequestBody @Valid GastoRequestDTO request) {
@@ -30,23 +26,23 @@ public class GastoController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<List<GastoResponseDTO>> listarGastos() {
-        List<GastoResponseDTO> gastos = gastoService.listarGastos();
-        return ResponseEntity.ok(gastos);
+        return ResponseEntity.ok(gastoService.listarGastos());
     }
 
-
-    @GetMapping("/gasto/{gastoId}")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<List<ParcelaResponseDTO>> listarParcelasPorId(@PathVariable String gastoId) {
-        List<ParcelaResponseDTO> parcelas = parcelaService.buscarPorGastoId(gastoId);
-        return ResponseEntity.ok(parcelas);
+    @GetMapping("/{id}")
+    public ResponseEntity<GastoResponseDTO> buscarPorId(@PathVariable String id) {
+        return ResponseEntity.ok(gastoService.buscarPorId(id));
     }
 
-    @GetMapping("/{id}/parcelas")
-    public ResponseEntity<List<ParcelaResponseDTO>> listarParcelasPorGasto(@PathVariable String id) {
-        List<ParcelaResponseDTO> parcelas = parcelaService.listarParcelasPorGasto(id);
-        return ResponseEntity.ok(parcelas);
+    @PutMapping("/{id}")
+    public ResponseEntity<GastoResponseDTO> atualizar(@PathVariable String id, @RequestBody @Valid GastoRequestDTO request) {
+        return ResponseEntity.ok(gastoService.atualizarGasto(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable String id) {
+        gastoService.deletarGasto(id);
+        return ResponseEntity.noContent().build();
     }
 }
