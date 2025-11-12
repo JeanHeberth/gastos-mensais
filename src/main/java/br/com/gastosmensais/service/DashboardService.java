@@ -1,6 +1,7 @@
 package br.com.gastosmensais.service;
 
 import br.com.gastosmensais.dto.gasto.response.ResumoMensalResponseDTO;
+import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
 import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.repository.GastoRepository;
@@ -25,19 +26,17 @@ public class DashboardService {
         LocalDate inicio = LocalDate.of(ano, mes, 1);
         LocalDate fim = inicio.withDayOfMonth(inicio.lengthOfMonth());
 
-        List<Parcela> parcelasDoMes = parcelaRepository.findByDataVencimentoBetween(inicio, fim);
+        List<ParcelaResponseDTO> parcelasDoMes = parcelaRepository.findParcelasComGastoByDataVencimentoBetween(inicio, fim);
 
         BigDecimal totalMes = parcelasDoMes.stream()
-                .map(Parcela::getValor)
+                .map(ParcelaResponseDTO::valor)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Busca a categoria do gasto via gastoId
         Map<String, BigDecimal> porCategoria = parcelasDoMes.stream()
                 .collect(Collectors.groupingBy(
-                        p -> gastoRepository.findById(p.getGastoId())
-                                .map(Gasto::getCategoria)
-                                .orElse("Sem categoria"),
-                        Collectors.reducing(BigDecimal.ZERO, Parcela::getValor, BigDecimal::add)
+                        p -> p.categoria(),
+                        Collectors.reducing(BigDecimal.ZERO, ParcelaResponseDTO::valor, BigDecimal::add)
                 ));
 
         long quantidade = parcelasDoMes.size();

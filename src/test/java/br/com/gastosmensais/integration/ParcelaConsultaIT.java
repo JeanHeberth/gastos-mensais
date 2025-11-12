@@ -143,4 +143,18 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
         mockMvc.perform(get("/parcelas/gasto/" + gastoId))
                 .andExpect(status().isForbidden());
     }
+
+    @Test
+    void deveListarParcelasComDescricaoECategoria() throws Exception {
+        YearMonth mes = YearMonth.of(2025, 11);
+
+        mockMvc.perform(get("/parcelas")
+                        .param("mes", mes.toString())
+                        .header("Authorization", "Bearer " + token))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].descricao").value("Notebook Dell"))
+                .andExpect(jsonPath("$[0].categoria").value("Tecnologia"));
+    }
+
 }
