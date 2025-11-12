@@ -4,7 +4,10 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,5 +24,8 @@ public class Parcela {
     private String gastoId;
     private String descricao;
     private String categoria;
+
+
+
 
 }

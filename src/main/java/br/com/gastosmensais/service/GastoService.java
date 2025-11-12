@@ -2,89 +2,148 @@ package br.com.gastosmensais.service;
 
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.dto.gasto.response.GastoResponseDTO;
-import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
 import br.com.gastosmensais.entity.Gasto;
+import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.repository.GastoRepository;
-import jakarta.validation.Valid;
+import br.com.gastosmensais.repository.ParcelaRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static br.com.gastosmensais.dto.gasto.request.GastoRequestDTO.toEntity;
+import static br.com.gastosmensais.dto.gasto.response.GastoResponseDTO.*;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GastoService {
 
     private final GastoRepository gastoRepository;
-    private final ParcelaService parcelaService;
+    private final ParcelaRepository parcelaRepository;
 
+    /**
+     * Cria um novo gasto e gera as parcelas
+     */
+    public ResponseEntity<GastoResponseDTO> salvarGasto(GastoRequestDTO request) {
+        log.info("💾 Criando novo gasto: {}", request.descricao());
 
-    public GastoResponseDTO criarGastos(GastoRequestDTO gastoRequestDTO) {
-
-        Gasto gasto = gastoRequestDTO.toEntity(gastoRequestDTO);
-
+        Gasto gasto = toEntity(request);
         Gasto gastoSalvo = gastoRepository.save(gasto);
 
-        List<ParcelaResponseDTO> parcelas = parcelaService.gerarEGuardarParcelas(gastoRequestDTO, gastoSalvo.getId());
-        return new GastoResponseDTO(
-                gastoSalvo.getId(),
-                gastoSalvo.getDescricao(),
-                gastoSalvo.getValorTotal(),
-                gastoSalvo.getCategoria(),
-                gastoSalvo.getTipoPagamento(),
-                gastoSalvo.getParcelas(),
-                gastoSalvo.getDataCompra(),
-                parcelas
-        );
+        List<Parcela> parcelas = gerarParcelas(gastoSalvo);
+        parcelaRepository.saveAll(parcelas);
+
+        return ResponseEntity
+                .status(201)
+                .body(fromRequest(gastoSalvo));
     }
 
-    public List<GastoResponseDTO> listarGastosPorPeriodo(Integer mes, Integer ano) {
-        List<Gasto> gastos;
+    /**
+     * Atualiza um gasto existente e recalcula as parcelas
+     */
+    public ResponseEntity<GastoResponseDTO> atualizarGasto(String id, GastoRequestDTO request) {
+        log.info("✏️ Atualizando gasto ID: {}", id);
 
-        if (mes != null && ano != null) {
-            LocalDateTime inicio = LocalDateTime.of(ano, mes, 1, 0, 0);
-            LocalDateTime fim = inicio.plusMonths(1);
-            gastos = gastoRepository.findByDataCompraBetween(inicio, fim);
-        } else {
-            gastos = gastoRepository.findAll();
+        Optional<Gasto> optionalGasto = gastoRepository.findById(id);
+        if (optionalGasto.isEmpty()) {
+            log.warn("⚠️ Gasto não encontrado: {}", id);
+            return ResponseEntity.notFound().build();
         }
 
-        return gastos.stream()
-                .map(GastoResponseDTO::fromRequest)
-                .toList();
+        Gasto gastoExistente = optionalGasto.get();
+
+        gastoExistente.setDescricao(request.descricao());
+        gastoExistente.setValorTotal(request.valorTotal());
+        gastoExistente.setCategoria(request.categoria());
+        gastoExistente.setTipoPagamento(request.tipoPagamento());
+        gastoExistente.setParcelas(request.parcelas());
+        gastoExistente.setDataCompra(request.dataCompra());
+
+        Gasto gastoAtualizado = gastoRepository.save(gastoExistente);
+
+        // Recalcular parcelas
+        parcelaRepository.deleteByGastoId(gastoAtualizado.getId());
+        List<Parcela> novasParcelas = gerarParcelas(gastoAtualizado);
+        parcelaRepository.saveAll(novasParcelas);
+
+        log.info("✅ Parcelas recalculadas para o gasto ID: {}", id);
+
+        return ResponseEntity.ok(fromRequest(gastoAtualizado));
     }
 
-    public List<GastoResponseDTO> listarGastos() {
+    /**
+     * Exclui um gasto e suas parcelas associadas
+     */
+    public ResponseEntity<Void> deletarGasto(String id) {
+        if (!gastoRepository.existsById(id)) {
+            log.warn("⚠️ Tentativa de exclusão de gasto inexistente: {}", id);
+            return ResponseEntity.notFound().build();
+        }
+
+        parcelaRepository.deleteByGastoId(id);
+        gastoRepository.deleteById(id);
+        log.info("🗑 Gasto {} removido com sucesso.", id);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Lista todos os gastos
+     */
+    public ResponseEntity<List<GastoResponseDTO>> listarTodos() {
         List<Gasto> gastos = gastoRepository.findAll();
-        return gastos.stream()
+
+        if (gastos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        List<GastoResponseDTO> responses = gastos.stream()
                 .map(GastoResponseDTO::fromRequest)
                 .collect(Collectors.toList());
+
+        return ResponseEntity.ok(responses);
     }
 
-    public GastoResponseDTO buscarPorId(String id) {
-        Gasto gasto = gastoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Gasto não encontrado"));
-        return GastoResponseDTO.fromRequest(gasto);
+    /**
+     * Busca gasto por ID
+     */
+    public ResponseEntity<GastoResponseDTO> buscarPorId(String id) {
+        return gastoRepository.findById(id)
+                .map(gasto -> ResponseEntity.ok(fromRequest(gasto)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    public GastoResponseDTO atualizarGasto(String id, @Valid GastoRequestDTO request) {
-        Gasto gasto = gastoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Gasto não encontrado"));
-        gasto.setDescricao(request.descricao());
-        gasto.setValorTotal(request.valorTotal());
-        gasto.setCategoria(request.categoria());
-        gasto.setTipoPagamento(request.tipoPagamento());
-        gasto.setParcelas(request.parcelas());
-        gasto.setDataCompra(request.dataCompra());
-        return GastoResponseDTO.fromRequest(gastoRepository.save(gasto));
+    /**
+     * Gera as parcelas do gasto
+     */
+    private List<Parcela> gerarParcelas(Gasto gasto) {
+        List<Parcela> parcelas = new ArrayList<>();
+
+        BigDecimal valorParcela = gasto.getValorTotal()
+                .divide(BigDecimal.valueOf(gasto.getParcelas()), 2, RoundingMode.HALF_UP);
+
+        for (int i = 1; i <= gasto.getParcelas(); i++) {
+            Parcela parcela = new Parcela();
+            parcela.setNumero(i);
+            parcela.setValor(valorParcela);
+            parcela.setDataVencimento(LocalDate.from(gasto.getDataCompra().plusMonths(i - 1)));
+            parcela.setGastoId(gasto.getId());
+            parcela.setDescricao(gasto.getDescricao());
+            parcela.setCategoria(gasto.getCategoria());
+            parcelas.add(parcela);
+        }
+
+        return parcelas;
     }
 
-    public void deletarGasto(String id) {
-        gastoRepository.deleteById(id);
-    }
+
 }
-
-
-
