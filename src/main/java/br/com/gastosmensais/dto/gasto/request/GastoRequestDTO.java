@@ -1,10 +1,7 @@
 package br.com.gastosmensais.dto.gasto.request;
 
 import br.com.gastosmensais.entity.Gasto;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,7 +13,7 @@ public record GastoRequestDTO(
         String descricao,
 
         @NotNull(message = "O valor total é obrigatório.")
-        @Positive(message = "O valor total deve ser maior que zero.")
+        @DecimalMin(value = "0.01", message = "O valor total deve ser maior que zero.")
         BigDecimal valorTotal,
 
         @NotBlank(message = "A categoria é obrigatória.")

@@ -2,11 +2,11 @@ package br.com.gastosmensais.service;
 
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
-import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.repository.GastoRepository;
 import br.com.gastosmensais.repository.ParcelaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -14,7 +14,6 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -68,5 +67,27 @@ public class ParcelaService {
         return parcelaRepository.findParcelasComGastoByDataVencimentoBetween(inicio, fim);
     }
 
+    public ResponseEntity<ParcelaResponseDTO> atualizarParcela(String id, ParcelaResponseDTO parcelaAtualizada) {
+        Parcela parcela = parcelaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Parcela não encontrada"));
 
+        parcela.setDescricao(parcelaAtualizada.descricao());
+        parcela.setCategoria(parcelaAtualizada.categoria());
+        parcela.setValor(parcelaAtualizada.valor());
+        parcela.setDataVencimento(parcelaAtualizada.dataVencimento());
+
+        Parcela salva = parcelaRepository.save(parcela);
+
+        return ResponseEntity.ok(ParcelaResponseDTO.fromRequest(salva));
+    }
+
+
+    public void deletarParcela(String id) {
+        if (!parcelaRepository.existsById(id)) {
+            ResponseEntity.notFound().build();
+            return;
+        }
+        parcelaRepository.deleteById(id);
+        ResponseEntity.noContent().build();
+    }
 }
