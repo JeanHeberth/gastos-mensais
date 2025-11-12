@@ -56,7 +56,7 @@ class ParcelaControllerListIT extends AbstractIntegrationTest {
 
         String token = testAuthUtil.gerarTokenParaUsuarioPadrao();
 
-        mockMvc.perform(get("/gastos/{id}/parcelas", "gasto-xyz")
+        mockMvc.perform(get("/parcelas/gasto/{id}", "gasto-xyz")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + token))
                 .andDo(print())

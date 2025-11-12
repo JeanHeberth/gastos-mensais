@@ -70,12 +70,17 @@ public class ParcelaService {
     public ResponseEntity<ParcelaResponseDTO> atualizarParcela(String id, ParcelaResponseDTO parcelaAtualizada) {
         Parcela parcela = parcelaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Parcela não encontrada"));
+
         parcela.setDescricao(parcelaAtualizada.descricao());
         parcela.setCategoria(parcelaAtualizada.categoria());
         parcela.setValor(parcelaAtualizada.valor());
         parcela.setDataVencimento(parcelaAtualizada.dataVencimento());
-        return ResponseEntity.ok(ParcelaResponseDTO.fromRequest(parcela));
+
+        Parcela salva = parcelaRepository.save(parcela);
+
+        return ResponseEntity.ok(ParcelaResponseDTO.fromRequest(salva));
     }
+
 
     public void deletarParcela(String id) {
         if (!parcelaRepository.existsById(id)) {

@@ -35,4 +35,6 @@ public interface ParcelaRepository extends MongoRepository<Parcela, String> {
                     "} }"
     })
     List<ParcelaResponseDTO> findParcelasComGastoByDataVencimentoBetween(LocalDate inicio, LocalDate fim);
+
+    void deleteByGastoId(String id);
 }
