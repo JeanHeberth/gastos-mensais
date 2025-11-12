@@ -3,6 +3,7 @@ package br.com.gastosmensais.integration;
 import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.config.JwtUtil;
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
+import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.entity.Usuario;
 import br.com.gastosmensais.repository.GastoRepository;
@@ -64,7 +65,7 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
         gastoRepository.deleteAll();
         usuarioRepository.deleteAll();
 
-        // Cria usuário de teste e token
+        // Cria usuário e token JWT
         Usuario usuario = Usuario.builder()
                 .nome("Jean Heberth")
                 .email("jean@example.com")
@@ -74,39 +75,36 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
         usuarioRepository.save(usuario);
         token = jwtUtil.gerarToken(usuario.getEmail());
 
-        // Cria gasto base para as parcelas
-        GastoRequestDTO gastoRequest = new GastoRequestDTO(
-                "Notebook Dell",
-                new BigDecimal("6000.00"),
-                "Tecnologia",
-                "Cartão",
-                3,
-                LocalDateTime.of(2025, 11, 6, 0, 0)
-        );
+        // Cria um gasto principal
+        Gasto gasto = gastoRepository.save(Gasto.builder()
+                .descricao("Notebook Dell")
+                .valorTotal(new BigDecimal("6000.00"))
+                .categoria("Tecnologia")
+                .tipoPagamento("Cartão")
+                .parcelas(3)
+                .dataCompra(LocalDateTime.of(2025, 11, 6, 0, 0))
+                .build());
 
-        var response = gastoRepository.save(
-                GastoRequestDTO.toEntity(gastoRequest)
-        );
-        gastoId = response.getId();
+        gastoId = gasto.getId();
 
-        // Cria 3 parcelas manuais no MongoDB
+        // Cria 3 parcelas no banco
         List<Parcela> parcelas = List.of(
                 Parcela.builder()
                         .numero(1)
                         .valor(new BigDecimal("2000.00"))
-                        .dataVencimento(LocalDate.of(2025, 11, 10))
+                        .dataVencimento(LocalDate.of(2025, 11, 10)) // dentro de novembro
                         .gastoId(gastoId)
                         .build(),
                 Parcela.builder()
                         .numero(2)
                         .valor(new BigDecimal("2000.00"))
-                        .dataVencimento(LocalDate.of(2025, 12, 10))
+                        .dataVencimento(LocalDate.of(2025, 12, 10)) // dezembro
                         .gastoId(gastoId)
                         .build(),
                 Parcela.builder()
                         .numero(3)
                         .valor(new BigDecimal("2000.00"))
-                        .dataVencimento(LocalDate.of(2026, 1, 10))
+                        .dataVencimento(LocalDate.of(2026, 1, 10)) // janeiro
                         .gastoId(gastoId)
                         .build()
         );
@@ -135,7 +133,9 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].dataVencimento").value("2025-11-10"))
-                .andExpect(jsonPath("$[0].valor").value(2000.00));
+                .andExpect(jsonPath("$[0].valor").value(2000.00))
+                .andExpect(jsonPath("$[0].descricao").value("Notebook Dell"))
+                .andExpect(jsonPath("$[0].categoria").value("Tecnologia"));
     }
 
     @Test
