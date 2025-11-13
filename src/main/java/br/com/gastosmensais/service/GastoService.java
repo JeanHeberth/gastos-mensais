@@ -34,6 +34,8 @@ public class GastoService {
      * Cria um novo gasto e gera as parcelas
      */
     public ResponseEntity<GastoResponseDTO> salvarGasto(GastoRequestDTO request) {
+
+
         log.info("💾 Criando novo gasto: {}", request.descricao());
 
         Gasto gasto = toEntity(request);

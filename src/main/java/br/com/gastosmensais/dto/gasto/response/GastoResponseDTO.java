@@ -14,9 +14,8 @@ public record GastoResponseDTO(
         String categoria,
         String tipoPagamento,
         Integer parcelas,
-        LocalDateTime dataCompra,
-        List<ParcelaResponseDTO> parcelasGeradas
-) {
+        LocalDateTime dataCompra
+        ) {
 
     public static GastoResponseDTO fromRequest(Gasto gasto) {
         return new GastoResponseDTO(
@@ -26,8 +25,7 @@ public record GastoResponseDTO(
                 gasto.getCategoria(),
                 gasto.getTipoPagamento(),
                 gasto.getParcelas(),
-                gasto.getDataCompra(),
-                null
+                gasto.getDataCompra()
         );
     }
 }
