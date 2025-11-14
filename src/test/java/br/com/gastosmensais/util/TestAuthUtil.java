@@ -28,7 +28,6 @@ public class TestAuthUtil {
                                 .nome("Usuário Teste")
                                 .email("teste@example.com")
                                 .senha(encoder.encode("Senha123$"))
-                                .role("ROLE_USER")
                                 .build()
                 ));
         return jwtUtil.gerarToken(user.getEmail());

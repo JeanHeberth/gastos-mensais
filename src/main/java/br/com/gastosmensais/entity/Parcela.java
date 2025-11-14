@@ -18,10 +18,11 @@ public class Parcela {
 
     @Id
     private String id;
+    private String usuarioId;
+    private String gastoId;
     private Integer numero;
     private BigDecimal valor;
     private LocalDate dataVencimento;
-    private String gastoId;
     private String descricao;
     private String categoria;
 

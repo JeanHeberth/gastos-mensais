@@ -13,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/parcelas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:4200")
 public class ParcelaController {
 
     private final ParcelaService parcelaService;
