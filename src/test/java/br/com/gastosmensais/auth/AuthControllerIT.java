@@ -66,7 +66,6 @@ class AuthControllerIT extends AbstractIntegrationTest {
                 .nome("Jean Heberth")
                 .email("jean@example.com")
                 .senha(passwordEncoder.encode("Jean123#$"))
-                .role("ROLE_USER")
                 .build());
 
         LoginRequestDTO request = new LoginRequestDTO("jean@example.com", "Jean123#$");
@@ -85,7 +84,6 @@ class AuthControllerIT extends AbstractIntegrationTest {
                 .nome("Jean Heberth")
                 .email("jean@example.com")
                 .senha(passwordEncoder.encode("123456"))
-                .role("ROLE_USER")
                 .build());
 
         LoginRequestDTO request = new LoginRequestDTO("jean@example.com", "senhaErrada");

@@ -62,7 +62,6 @@ class GastoConsultaIT extends AbstractIntegrationTest {
                 .nome("Jean Heberth")
                 .email("jean@example.com")
                 .senha(passwordEncoder.encode("Jean123#$"))
-                .role("ROLE_USER")
                 .build();
         usuarioRepository.save(usuario);
 

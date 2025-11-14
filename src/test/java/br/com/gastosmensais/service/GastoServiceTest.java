@@ -44,7 +44,7 @@ class GastoServiceTest {
         when(parcelaRepository.saveAll(any())).thenReturn(List.of());
 
         // Act
-        GastoResponseDTO response = gastoService.salvarGasto(dto).getBody();
+        GastoResponseDTO response = gastoService.salvarGasto(dto, "usuario-123").getBody();
 
         // Assert
         assertThat(response).isNotNull();
