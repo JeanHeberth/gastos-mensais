@@ -7,9 +7,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface GastoRepository extends MongoRepository<Gasto, String> {
+
     List<Gasto> findByCategoria(String categoria);
 
     List<Gasto> findByDataCompraBetween(LocalDateTime inicio, LocalDateTime fim);
-//    List<Gasto> findAllByUsuarioId(String usuarioId);
 
+    // 🔹 Agora multi-usuário:
+    List<Gasto> findAllByUsuarioId(String usuarioId);
+
+    List<Gasto> findByUsuarioIdAndDataCompraBetween(String usuarioId,
+                                                    LocalDateTime inicio,
+                                                    LocalDateTime fim);
 }

@@ -24,13 +24,11 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Configuração CORS
-                .authorizeHttpRequests(
-
-                        auth -> auth
-                                .requestMatchers("/auth/**").permitAll() // 🔓 Login permitido sem autenticação
-                                .requestMatchers(HttpMethod.POST, "/usuarios/**").permitAll() // 🔓 Registro permitido sem autenticação
-                                .requestMatchers("/password-reset/**").permitAll() // 🔓 Registro permitido sem autenticação
-                                .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/auth/**").permitAll() // 🔓 Login permitido sem autenticação
+                        .requestMatchers(HttpMethod.POST, "/usuarios/**").permitAll() // 🔓 Registro permitido sem autenticação
+                        .requestMatchers("/password-reset/**").permitAll() // 🔓 Registro permitido sem autenticação
+                        .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -40,22 +38,22 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOriginPatterns(List.of("http://localhost*", "capacitor://localhost", "ionic://localhost", "http://localhost:4200"));
+        // Permite qualquer localhost (React/Vite/Angular)
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",    // permite 3000, 4200, 5173 etc
+                "capacitor://localhost",
+                "ionic://localhost"
+        ));
 
-        // ✅ Permite requisições do frontend Angular
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200", "http://localhost:5173", "http://localhost:9999"));
-
-
-        // ✅ Permite todos os métodos HTTP necessários
+        // Métodos permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // ✅ Permite todos os headers
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Headers permitidos
+        configuration.setAllowedHeaders(List.of("*"));
 
-        // ✅ Permite envio de credenciais (cookies, authorization headers)
+        // Permite envio de Authorization header (JWT)
         configuration.setAllowCredentials(true);
 
-        // ✅ Cache do preflight por 1 hora
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -63,6 +61,7 @@ public class SecurityConfig {
 
         return source;
     }
+
 
     @Bean
     public BCryptPasswordEncoder bCryptPasswordEncoder() {

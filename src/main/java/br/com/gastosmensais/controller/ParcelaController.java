@@ -13,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/parcelas")
 @RequiredArgsConstructor
-
 public class ParcelaController {
 
     private final ParcelaService parcelaService;

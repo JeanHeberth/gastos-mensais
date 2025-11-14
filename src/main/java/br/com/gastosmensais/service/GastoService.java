@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static br.com.gastosmensais.dto.gasto.request.GastoRequestDTO.toEntity;
-import static br.com.gastosmensais.dto.gasto.response.GastoResponseDTO.*;
+import static br.com.gastosmensais.dto.gasto.response.GastoResponseDTO.fromRequest;
 
 @Slf4j
 @Service
@@ -33,10 +33,12 @@ public class GastoService {
     /**
      * Cria um novo gasto e gera as parcelas
      */
-    public ResponseEntity<GastoResponseDTO> salvarGasto(GastoRequestDTO request) {
-        log.info("💾 Criando novo gasto: {}", request.descricao());
+    public ResponseEntity<GastoResponseDTO> salvarGasto(GastoRequestDTO request, String usuarioId) {
+        log.info("💾 Criando novo gasto: {} para usuário {}", request.descricao(), usuarioId);
 
         Gasto gasto = toEntity(request);
+        gasto.setUsuarioId(usuarioId); // 🔹 vínculo com o usuário logado
+
         Gasto gastoSalvo = gastoRepository.save(gasto);
 
         List<Parcela> parcelas = gerarParcelas(gastoSalvo);
@@ -50,8 +52,8 @@ public class GastoService {
     /**
      * Atualiza um gasto existente e recalcula as parcelas
      */
-    public ResponseEntity<GastoResponseDTO> atualizarGasto(String id, GastoRequestDTO request) {
-        log.info("✏️ Atualizando gasto ID: {}", id);
+    public ResponseEntity<GastoResponseDTO> atualizarGasto(String id, GastoRequestDTO request, String usuarioId) {
+        log.info("✏️ Atualizando gasto ID: {} para usuário {}", id, usuarioId);
 
         Optional<Gasto> optionalGasto = gastoRepository.findById(id);
         if (optionalGasto.isEmpty()) {
@@ -60,6 +62,12 @@ public class GastoService {
         }
 
         Gasto gastoExistente = optionalGasto.get();
+
+        // 🔒 Garante que o usuário só mexe no próprio gasto
+        if (!usuarioId.equals(gastoExistente.getUsuarioId())) {
+            log.warn("🚫 Usuário {} tentou atualizar gasto de outro usuário", usuarioId);
+            return ResponseEntity.status(403).build();
+        }
 
         gastoExistente.setDescricao(request.descricao());
         gastoExistente.setValorTotal(request.valorTotal());
@@ -70,7 +78,6 @@ public class GastoService {
 
         Gasto gastoAtualizado = gastoRepository.save(gastoExistente);
 
-        // Recalcular parcelas
         parcelaRepository.deleteByGastoId(gastoAtualizado.getId());
         List<Parcela> novasParcelas = gerarParcelas(gastoAtualizado);
         parcelaRepository.saveAll(novasParcelas);
@@ -83,24 +90,31 @@ public class GastoService {
     /**
      * Exclui um gasto e suas parcelas associadas
      */
-    public ResponseEntity<Void> deletarGasto(String id) {
-        if (!gastoRepository.existsById(id)) {
+    public ResponseEntity<Void> deletarGasto(String id, String usuarioId) {
+        Optional<Gasto> optionalGasto = gastoRepository.findById(id);
+        if (optionalGasto.isEmpty()) {
             log.warn("⚠️ Tentativa de exclusão de gasto inexistente: {}", id);
             return ResponseEntity.notFound().build();
         }
 
+        Gasto gasto = optionalGasto.get();
+        if (!usuarioId.equals(gasto.getUsuarioId())) {
+            log.warn("🚫 Usuário {} tentou deletar gasto de outro usuário", usuarioId);
+            return ResponseEntity.status(403).build();
+        }
+
         parcelaRepository.deleteByGastoId(id);
         gastoRepository.deleteById(id);
-        log.info("🗑 Gasto {} removido com sucesso.", id);
+        log.info("🗑 Gasto {} removido com sucesso para usuário {}.", id, usuarioId);
 
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * Lista todos os gastos
+     * Lista todos os gastos do usuário logado
      */
-    public ResponseEntity<List<GastoResponseDTO>> listarTodos() {
-        List<Gasto> gastos = gastoRepository.findAll();
+    public ResponseEntity<List<GastoResponseDTO>> listarTodos(String usuarioId) {
+        List<Gasto> gastos = gastoRepository.findAllByUsuarioId(usuarioId);
 
         if (gastos.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -114,10 +128,11 @@ public class GastoService {
     }
 
     /**
-     * Busca gasto por ID
+     * Busca gasto por ID, garantindo que pertence ao usuário
      */
-    public ResponseEntity<GastoResponseDTO> buscarPorId(String id) {
+    public ResponseEntity<GastoResponseDTO> buscarPorId(String id, String usuarioId) {
         return gastoRepository.findById(id)
+                .filter(g -> usuarioId.equals(g.getUsuarioId()))
                 .map(gasto -> ResponseEntity.ok(fromRequest(gasto)))
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -144,6 +159,4 @@ public class GastoService {
 
         return parcelas;
     }
-
-
 }

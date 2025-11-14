@@ -1,10 +1,10 @@
 package br.com.gastosmensais.service;
 
+import br.com.gastosmensais.config.UsuarioLogado;
 import br.com.gastosmensais.entity.Usuario;
 import br.com.gastosmensais.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,10 +27,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                     return new UsernameNotFoundException("Usuário não encontrado");
                 });
 
-        return User.builder()
-                .username(usuario.getEmail())
-                .password(usuario.getSenha()) // já está encriptada
-                .roles("USER") // você pode adicionar lógica de roles no futuro
-                .build();
+        // 👉 Agora retornamos um principal que conhece o ID do usuário
+        return new UsuarioLogado(usuario);
     }
 }
