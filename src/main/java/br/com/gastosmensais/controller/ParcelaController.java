@@ -1,10 +1,12 @@
 package br.com.gastosmensais.controller;
 
+import br.com.gastosmensais.config.UsuarioLogado;
 import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
 import br.com.gastosmensais.service.ParcelaService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.YearMonth;
@@ -17,33 +19,74 @@ public class ParcelaController {
 
     private final ParcelaService parcelaService;
 
-    // 🔹 Parcelas de um gasto específico
+    /**
+     * Recupera o ID do usuário logado pelo SecurityContext
+     */
+    private String getUsuarioLogadoId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !(auth.getPrincipal() instanceof UsuarioLogado usuarioLogado)) {
+            throw new IllegalStateException("Usuário não autenticado");
+        }
+        return usuarioLogado.getId();
+    }
+
+    /**
+     * Buscar parcelas por ID do gasto
+     */
     @GetMapping("/gasto/{gastoId}")
     public ResponseEntity<List<ParcelaResponseDTO>> listarPorGasto(@PathVariable String gastoId) {
-        return ResponseEntity.ok(parcelaService.buscarPorGastoId(gastoId));
+        String usuarioId = getUsuarioLogadoId();
+
+        List<ParcelaResponseDTO> parcelas = parcelaService.buscarPorGastoId(gastoId, usuarioId);
+
+        if (parcelas.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(parcelas);
     }
 
-    // 🔹 Parcelas de um mês específico
-    @GetMapping
-    public ResponseEntity<List<ParcelaResponseDTO>> listarPorMes(
-            @RequestParam("mes") @DateTimeFormat(pattern = "yyyy-MM") YearMonth mes
-    ) {
-        return ResponseEntity.ok(parcelaService.buscarPorMes(mes));
+    /**
+     * Buscar parcelas do mês do usuário logado
+     * Exemplo de chamada: /parcelas/mes/2025-01
+     */
+    @GetMapping("/mes/{anoMes}")
+    public ResponseEntity<List<ParcelaResponseDTO>> buscarPorMes(@PathVariable String anoMes) {
+
+        String usuarioId = getUsuarioLogadoId();
+
+        YearMonth mes = YearMonth.parse(anoMes);
+
+        List<ParcelaResponseDTO> parcelas = parcelaService.buscarPorMes(mes, usuarioId);
+
+        if (parcelas.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(parcelas);
     }
 
-    // 🔹 Atualizar uma parcela
+    /**
+     * Atualizar uma parcela específica
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<ParcelaResponseDTO> atualizar(
+    public ResponseEntity<ParcelaResponseDTO> atualizarParcela(
             @PathVariable String id,
-            @RequestBody ParcelaResponseDTO dto
+            @RequestBody ParcelaResponseDTO request
     ) {
-        return ResponseEntity.ok(parcelaService.atualizarParcela(id, dto)).getBody();
+        String usuarioId = getUsuarioLogadoId();
+
+        return parcelaService.atualizarParcela(id, request, usuarioId);
     }
 
-    // 🔹 Deletar uma parcela
+    /**
+     * Deletar parcela
+     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletar(@PathVariable String id) {
-        parcelaService.deletarParcela(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deletarParcela(@PathVariable String id) {
+
+        String usuarioId = getUsuarioLogadoId();
+
+        return parcelaService.deletarParcela(id, usuarioId);
     }
 }

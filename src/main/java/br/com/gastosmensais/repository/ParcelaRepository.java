@@ -12,29 +12,37 @@ public interface ParcelaRepository extends MongoRepository<Parcela, String> {
     List<Parcela> findByGastoId(String gastoId);
 
     @Aggregation(pipeline = {
-            // 1️⃣ Filtra as parcelas no intervalo do mês
-            "{ $match: { 'dataVencimento': { $gte: ?0, $lte: ?1 } } }",
+            // 1️⃣ Filtra por usuarioId
+            "{ $match: { 'usuarioId': ?0 } }",
 
-            // 2️⃣ Converte o gastoId (String) em ObjectId, com fallback de segurança
+            // 2️⃣ Filtra por intervalo de datas
+            "{ $match: { 'dataVencimento': { $gte: ?1, $lte: ?2 } } }",
+
+            // 3️⃣ Converte o gastoId para ObjectId (caso seja necessário)
             "{ $addFields: { gastoObjectId: { $convert: { input: '$gastoId', to: 'objectId', onError: null, onNull: null } } } }",
 
-            // 3️⃣ Faz o join com a coleção 'gastos'
+            // 4️⃣ Join com gastos
             "{ $lookup: { from: 'gastos', localField: 'gastoObjectId', foreignField: '_id', as: 'gasto' } }",
 
-            // 4️⃣ Desconstrói o array retornado pelo lookup
+            // 5️⃣ Desconstrói array
             "{ $unwind: { path: '$gasto', preserveNullAndEmptyArrays: true } }",
 
-            // 5️⃣ Projeta os campos necessários para o frontend
+            // 6️⃣ Projeta campos
             "{ $project: { " +
                     "numero: 1, " +
                     "valor: 1, " +
                     "dataVencimento: 1, " +
                     "gastoId: 1, " +
+                    "usuarioId: 1, " +
                     "descricao: { $ifNull: ['$gasto.descricao', '-'] }, " +
                     "categoria: { $ifNull: ['$gasto.categoria', '-'] } " +
                     "} }"
     })
-    List<ParcelaResponseDTO> findParcelasComGastoByDataVencimentoBetween(LocalDate inicio, LocalDate fim);
+    List<Parcela> findByUsuarioIdAndDataVencimentoBetween(
+            String usuarioId,      // ?0
+            LocalDate inicio,      // ?1
+            LocalDate fim          // ?2
+    );
 
     void deleteByGastoId(String id);
 }

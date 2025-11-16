@@ -29,7 +29,7 @@ public class ParcelaServiceIT extends AbstractIntegrationTest {
     void deveGerarParcelasCorretamente() {
        GastoRequestDTO gasto = TestDataFactory.criarGastoRequestPadrao();
 
-        var parcelas = parcelaService.gerarEGuardarParcelas(gasto, "Gastos123");
+        var parcelas = parcelaService.gerarEGuardarParcelas(gasto, "Gastos123","usuarioID");
         var parcelasSalva = parcelaRepository.findByGastoId("Gastos123");
 
         assertThat(parcelas).hasSize(3);

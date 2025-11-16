@@ -11,7 +11,8 @@ public record ParcelaResponseDTO(
         LocalDate dataVencimento,
         String gastoId,
         String descricao,
-        String categoria
+        String categoria,
+        String usuarioId
 
 ) {
     public static ParcelaResponseDTO fromRequest(Parcela parcela) {
@@ -21,7 +22,8 @@ public record ParcelaResponseDTO(
                 parcela.getDataVencimento(),
                 parcela.getGastoId(),
                 parcela.getDescricao(),
-                parcela.getCategoria()
+                parcela.getCategoria(),
+                parcela.getUsuarioId()
         );
     }
 }

@@ -2,7 +2,6 @@ package br.com.gastosmensais.integration;
 
 import br.com.gastosmensais.config.AbstractIntegrationTest;
 import br.com.gastosmensais.config.JwtUtil;
-import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.entity.Gasto;
 import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.entity.Usuario;
@@ -28,8 +27,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,26 +35,23 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-
     @Autowired
     private GastoRepository gastoRepository;
-
     @Autowired
     private ParcelaRepository parcelaRepository;
 
     @Autowired
     private JwtUtil jwtUtil;
-
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
     private String token;
+    private String usuarioId;
     private String gastoId;
 
     @BeforeEach
@@ -65,57 +60,73 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
         gastoRepository.deleteAll();
         usuarioRepository.deleteAll();
 
-        // Cria usuário e token JWT
-        Usuario usuario = Usuario.builder()
-                .nome("Jean Heberth")
-                .email("jean@example.com")
-                .senha(passwordEncoder.encode("Jean123#$"))
-                .build();
-        usuarioRepository.save(usuario);
+        // 🔐 1. Cria usuário e token
+        Usuario usuario = usuarioRepository.save(
+                Usuario.builder()
+                        .nome("Jean Heberth")
+                        .email("jean@example.com")
+                        .senha(passwordEncoder.encode("Jean123#$"))
+                        .build()
+        );
+
+        usuarioId = usuario.getId();
         token = jwtUtil.gerarToken(usuario.getEmail());
 
-        // Cria um gasto principal
-        Gasto gasto = gastoRepository.save(Gasto.builder()
-                .descricao("Notebook Dell")
-                .valorTotal(new BigDecimal("6000.00"))
-                .categoria("Tecnologia")
-                .tipoPagamento("Cartão")
-                .parcelas(3)
-                .dataCompra(LocalDateTime.of(2025, 11, 6, 0, 0))
-                .build());
+        // 🧾 2. Criar Gasto vinculado ao usuário
+        Gasto gasto = gastoRepository.save(
+                Gasto.builder()
+                        .descricao("Notebook Dell")
+                        .valorTotal(new BigDecimal("6000.00"))
+                        .categoria("Tecnologia")
+                        .tipoPagamento("Cartão")
+                        .parcelas(3)
+                        .dataCompra(LocalDateTime.of(2025, 11, 6, 0, 0))
+                        .usuarioId(usuarioId) // OBRIGATÓRIO
+                        .build()
+        );
 
         gastoId = gasto.getId();
 
-        // Cria 3 parcelas no banco
-        List<Parcela> parcelas = List.of(
+        // 💳 3. Criar Parcelas completas e com usuarioId
+        parcelaRepository.saveAll(List.of(
                 Parcela.builder()
                         .numero(1)
                         .valor(new BigDecimal("2000.00"))
-                        .dataVencimento(LocalDate.of(2025, 11, 10)) // dentro de novembro
+                        .dataVencimento(LocalDate.of(2025, 11, 10))
                         .gastoId(gastoId)
+                        .descricao("Notebook Dell")
+                        .categoria("Tecnologia")
+                        .usuarioId(usuarioId)
                         .build(),
+
                 Parcela.builder()
                         .numero(2)
                         .valor(new BigDecimal("2000.00"))
-                        .dataVencimento(LocalDate.of(2025, 12, 10)) // dezembro
+                        .dataVencimento(LocalDate.of(2025, 12, 10))
                         .gastoId(gastoId)
+                        .descricao("Notebook Dell")
+                        .categoria("Tecnologia")
+                        .usuarioId(usuarioId)
                         .build(),
+
                 Parcela.builder()
                         .numero(3)
                         .valor(new BigDecimal("2000.00"))
-                        .dataVencimento(LocalDate.of(2026, 1, 10)) // janeiro
+                        .dataVencimento(LocalDate.of(2026, 1, 10))
                         .gastoId(gastoId)
+                        .descricao("Notebook Dell")
+                        .categoria("Tecnologia")
+                        .usuarioId(usuarioId)
                         .build()
-        );
-        parcelaRepository.saveAll(parcelas);
+        ));
     }
 
     @Test
     void deveListarParcelasPorGastoComSucesso() throws Exception {
         mockMvc.perform(get("/parcelas/gasto/" + gastoId)
                         .header("Authorization", "Bearer " + token))
-                .andDo(print())
                 .andExpect(status().isOk())
+                .andDo(print())
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].valor", is(2000.00)))
                 .andExpect(jsonPath("$[0].gastoId", is(gastoId)));
@@ -125,8 +136,7 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
     void deveListarParcelasPorMesComSucesso() throws Exception {
         YearMonth mes = YearMonth.of(2025, 11);
 
-        mockMvc.perform(get("/parcelas")
-                        .param("mes", mes.toString())
+        mockMvc.perform(get("/parcelas/mes/" + mes)
                         .header("Authorization", "Bearer " + token))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -136,6 +146,7 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[0].descricao").value("Notebook Dell"))
                 .andExpect(jsonPath("$[0].categoria").value("Tecnologia"));
     }
+
 
     @Test
     void deveNegarAcessoSemToken() throws Exception {
@@ -147,13 +158,11 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
     void deveListarParcelasComDescricaoECategoria() throws Exception {
         YearMonth mes = YearMonth.of(2025, 11);
 
-        mockMvc.perform(get("/parcelas")
-                        .param("mes", mes.toString())
+        mockMvc.perform(get("/parcelas/mes/" + mes)
                         .header("Authorization", "Bearer " + token))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].descricao").value("Notebook Dell"))
                 .andExpect(jsonPath("$[0].categoria").value("Tecnologia"));
     }
-
 }

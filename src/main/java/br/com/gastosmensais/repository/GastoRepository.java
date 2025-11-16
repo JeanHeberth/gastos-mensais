@@ -12,9 +12,10 @@ public interface GastoRepository extends MongoRepository<Gasto, String> {
 
     List<Gasto> findByDataCompraBetween(LocalDateTime inicio, LocalDateTime fim);
 
-    // 🔹 Agora multi-usuário:
+    // 🔐 Multiusuário: todos os gastos do usuário
     List<Gasto> findAllByUsuarioId(String usuarioId);
 
+    // 🔐 Multiusuário + período
     List<Gasto> findByUsuarioIdAndDataCompraBetween(String usuarioId,
                                                     LocalDateTime inicio,
                                                     LocalDateTime fim);
