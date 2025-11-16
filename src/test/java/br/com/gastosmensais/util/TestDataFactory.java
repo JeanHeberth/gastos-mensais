@@ -23,6 +23,18 @@ public class TestDataFactory {
         );
     }
 
+    public static GastoRequestDTO criarGastoRequestSemParcelas() {
+        return new GastoRequestDTO(
+                "Compra Teste",
+                new BigDecimal("1500.00"),
+                "ALIMENTACAO",
+                "CREDITO",
+                null, // parcelas = null → será 1
+                LocalDateTime.of(2025, 11, 6, 0, 0)
+        );
+    }
+
+
     // Entidade simulada de saída (mock do repositório)
     public static Gasto criarGastoEntityPadrao() {
         Gasto gasto = new Gasto();
@@ -39,9 +51,9 @@ public class TestDataFactory {
     // --- PARCELAS ---
     public static List<ParcelaResponseDTO> criarParcelasPadrao() {
         return List.of(
-                new ParcelaResponseDTO(1, new BigDecimal("2000.00"), LocalDate.of(2025, 12, 6), "gasto-123", "Notebook", "Eletronico"),
-                new ParcelaResponseDTO(2, new BigDecimal("2000.00"), LocalDate.of(2026, 1, 6), "gasto-123", "Notebook", "Eletronico"),
-                new ParcelaResponseDTO(3, new BigDecimal("2000.00"), LocalDate.of(2026, 2, 6), "gasto-123", "Notebook", "Eletronico")
+                new ParcelaResponseDTO(1, new BigDecimal("2000.00"), LocalDate.of(2025, 12, 6), "gasto-123", "Notebook", "Eletronico", "usuarioID"),
+                new ParcelaResponseDTO(2, new BigDecimal("2000.00"), LocalDate.of(2026, 1, 6), "gasto-123", "Notebook", "Eletronico", "usuarioID"),
+                new ParcelaResponseDTO(3, new BigDecimal("2000.00"), LocalDate.of(2026, 2, 6), "gasto-123", "Notebook", "Eletronico", "usuarioID")
         );
     }
 }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
@@ -20,18 +21,24 @@ import static org.mockito.Mockito.when;
 
 class GastoServiceTest {
 
+    private GastoService gastoService;
+
     @Mock
     private GastoRepository gastoRepository;
 
     @Mock
     private ParcelaRepository parcelaRepository;
 
-    @InjectMocks
-    private GastoService gastoService;
+    @Mock
+    private ParcelaService parcelaService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        gastoRepository = Mockito.mock(GastoRepository.class);
+        parcelaRepository = Mockito.mock(ParcelaRepository.class);
+        parcelaService = Mockito.mock(ParcelaService.class);
+
+        gastoService = new GastoService(gastoRepository, parcelaRepository, parcelaService);
     }
 
     @Test
@@ -41,7 +48,8 @@ class GastoServiceTest {
         Gasto gastoMock = TestDataFactory.criarGastoEntityPadrao();
 
         when(gastoRepository.save(any(Gasto.class))).thenReturn(gastoMock);
-        when(parcelaRepository.saveAll(any())).thenReturn(List.of());
+        when(parcelaService.gerarEGuardarParcelas(any(), any(), any()))
+                .thenReturn(List.of()); // mock do novo método
 
         // Act
         GastoResponseDTO response = gastoService.salvarGasto(dto, "usuario-123").getBody();

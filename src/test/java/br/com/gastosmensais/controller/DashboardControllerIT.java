@@ -45,39 +45,48 @@ class DashboardControllerIT extends AbstractIntegrationTest {
         gastoRepository.deleteAll();
         parcelaRepository.deleteAll();
 
-        // Gasto 1 - Curso Java parcelado em 3x (R$400 cada)
+        String usuarioId = testAuthUtil.getUsuarioPadraoId();
+
+        // Gasto 1 - Curso Java 3x
         Gasto curso = gastoRepository.save(Gasto.builder()
                 .descricao("Curso Java")
                 .valorTotal(new BigDecimal("1200.00"))
                 .categoria("Educação")
                 .tipoPagamento("Cartão")
                 .parcelas(3)
+                .usuarioId(usuarioId)
                 .dataCompra(LocalDateTime.of(2025, 11, 5, 0, 0))
                 .build());
 
-        // Gasto 2 - Supermercado à vista (R$800)
+        // Gasto 2 - Supermercado à vista
         Gasto mercado = gastoRepository.save(Gasto.builder()
                 .descricao("Supermercado")
                 .valorTotal(new BigDecimal("800.00"))
                 .categoria("Alimentação")
                 .tipoPagamento("Débito")
                 .parcelas(1)
+                .usuarioId(usuarioId)
                 .dataCompra(LocalDateTime.of(2025, 11, 8, 0, 0))
                 .build());
 
-        // Parcelas do mês de novembro/2025
         parcelaRepository.saveAll(List.of(
                 Parcela.builder()
                         .numero(1)
                         .valor(new BigDecimal("400.00"))
                         .dataVencimento(LocalDate.of(2025, 11, 5))
                         .gastoId(curso.getId())
+                        .usuarioId(usuarioId)
+                        .descricao("Curso Java")
+                        .categoria("Educação")
                         .build(),
                 Parcela.builder()
                         .numero(1)
                         .valor(new BigDecimal("800.00"))
                         .dataVencimento(LocalDate.of(2025, 11, 8))
                         .gastoId(mercado.getId())
+                        .usuarioId(usuarioId)
+                        .descricao("Supermercado")
+                        .categoria("Alimentação")
                         .build()
         ));
     }
@@ -89,11 +98,9 @@ class DashboardControllerIT extends AbstractIntegrationTest {
         mockMvc.perform(get("/gastos/resumo")
                         .param("mes", "11")
                         .param("ano", "2025")
-                        .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + token))
                 .andDo(print())
                 .andExpect(status().isOk())
-                // Total de parcelas do mês: 400 + 800 = 1200
                 .andExpect(jsonPath("$.total").value(1200.00))
                 .andExpect(jsonPath("$.porCategoria.Educação").value(400.00))
                 .andExpect(jsonPath("$.porCategoria.Alimentação").value(800.00))

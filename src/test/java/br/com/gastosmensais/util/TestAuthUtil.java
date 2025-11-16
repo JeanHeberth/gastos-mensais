@@ -1,6 +1,5 @@
 package br.com.gastosmensais.util;
 
-
 import br.com.gastosmensais.config.JwtUtil;
 import br.com.gastosmensais.entity.Usuario;
 import br.com.gastosmensais.repository.UsuarioRepository;
@@ -11,26 +10,41 @@ import org.springframework.stereotype.Component;
 @Component
 public class TestAuthUtil {
 
-    @Autowired
-    private UsuarioRepository usuarioRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final JwtUtil jwtUtil;
+    private final BCryptPasswordEncoder encoder;
 
     @Autowired
-    private JwtUtil jwtUtil;
+    public TestAuthUtil(UsuarioRepository usuarioRepository, JwtUtil jwtUtil, BCryptPasswordEncoder encoder) {
+        this.usuarioRepository = usuarioRepository;
+        this.jwtUtil = jwtUtil;
+        this.encoder = encoder;
+    }
 
-    @Autowired
-    private BCryptPasswordEncoder encoder;
+    private static final String EMAIL_PADRAO = "teste@example.com";
+    private static final String SENHA_PADRAO = "Senha123$";
 
-
-    public String gerarTokenParaUsuarioPadrao() {
-        Usuario user = usuarioRepository.findByEmail("teste@example.com")
+    /**
+     * Garante que o usuário padrão exista e retorna seu ID
+     */
+    public String getUsuarioPadraoId() {
+        Usuario usuario = usuarioRepository.findByEmail(EMAIL_PADRAO)
                 .orElseGet(() -> usuarioRepository.save(
                         Usuario.builder()
                                 .nome("Usuário Teste")
-                                .email("teste@example.com")
-                                .senha(encoder.encode("Senha123$"))
+                                .email(EMAIL_PADRAO)
+                                .senha(encoder.encode(SENHA_PADRAO))
                                 .build()
                 ));
-        return jwtUtil.gerarToken(user.getEmail());
+
+        return usuario.getId();
+    }
+
+    /**
+     * Gera um token JWT válido para o usuário padrão.
+     */
+    public String gerarTokenParaUsuarioPadrao() {
+        String usuarioId = getUsuarioPadraoId();
+        return jwtUtil.gerarToken(EMAIL_PADRAO); // token baseado no email
     }
 }
-

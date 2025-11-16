@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -55,6 +56,31 @@ class ParcelaControllerListIT extends AbstractIntegrationTest {
     void deveListarParcelasPorGasto() throws Exception {
 
         String token = testAuthUtil.gerarTokenParaUsuarioPadrao();
+        String usuarioId = testAuthUtil.getUsuarioPadraoId();
+
+        parcelaRepository.deleteAll();
+
+        parcelaRepository.saveAll(List.of(
+                Parcela.builder()
+                        .numero(1)
+                        .valor(new BigDecimal("200.00"))
+                        .dataVencimento(LocalDate.now())
+                        .gastoId("gasto-xyz")
+                        .usuarioId(usuarioId)            // ← OBRIGATÓRIO
+                        .descricao("Teste 1")            // ← OBRIGATÓRIO
+                        .categoria("Teste")              // ← OBRIGATÓRIO
+                        .build(),
+
+                Parcela.builder()
+                        .numero(2)
+                        .valor(new BigDecimal("200.00"))
+                        .dataVencimento(LocalDate.now())
+                        .gastoId("gasto-xyz")
+                        .usuarioId(usuarioId)            // ← OBRIGATÓRIO
+                        .descricao("Teste 2")
+                        .categoria("Teste")
+                        .build()
+        ));
 
         mockMvc.perform(get("/parcelas/gasto/{id}", "gasto-xyz")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -67,5 +93,6 @@ class ParcelaControllerListIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[1].numero").value(2))
                 .andExpect(jsonPath("$[1].gastoId").value("gasto-xyz"));
     }
+
 }
 
