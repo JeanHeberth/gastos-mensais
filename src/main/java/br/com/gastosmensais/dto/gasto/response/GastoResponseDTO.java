@@ -3,7 +3,7 @@ package br.com.gastosmensais.dto.gasto.response;
 import br.com.gastosmensais.entity.Gasto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public record GastoResponseDTO(
         String id,
@@ -12,7 +12,7 @@ public record GastoResponseDTO(
         String categoria,
         String tipoPagamento,
         Integer parcelas,
-        LocalDateTime dataCompra
+        LocalDate dataCompra
 ) {
 
     public static GastoResponseDTO fromRequest(Gasto gasto) {

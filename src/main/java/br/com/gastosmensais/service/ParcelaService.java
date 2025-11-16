@@ -3,7 +3,6 @@ package br.com.gastosmensais.service;
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
 import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
 import br.com.gastosmensais.entity.Parcela;
-import br.com.gastosmensais.repository.GastoRepository;
 import br.com.gastosmensais.repository.ParcelaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +21,15 @@ import java.util.stream.IntStream;
 public class ParcelaService {
 
     private final ParcelaRepository parcelaRepository;
-    private final GastoRepository gastoRepository;
 
+    /**
+     * Gera e salva as parcelas de um gasto.
+     * Agora inclui o usuarioId herdado do Gasto.
+     */
+    public List<Parcela> gerarEGuardarParcelas(GastoRequestDTO gasto, String gastoId, String usuarioId) {
 
-    public List<ParcelaResponseDTO> gerarEGuardarParcelas(GastoRequestDTO gasto, String gastoId) {
         int totalParcelas = gasto.parcelas() != null ? gasto.parcelas() : 1;
+
         BigDecimal valorParcela = gasto.valorTotal()
                 .divide(BigDecimal.valueOf(totalParcelas), 2, RoundingMode.HALF_UP);
 
@@ -34,42 +37,71 @@ public class ParcelaService {
                 .mapToObj(numero -> Parcela.builder()
                         .numero(numero)
                         .valor(valorParcela)
-                        .dataVencimento(gasto.dataCompra().toLocalDate().plusMonths(numero - 1))
+                        .dataVencimento(gasto.dataCompra().plusMonths(numero - 1))
                         .gastoId(gastoId)
-                        .build())
-                .toList();
+                        .usuarioId(usuarioId) // 🔐 VÍNCULO COM DONO DO GASTO
+                        .descricao(gasto.descricao())
+                        .categoria(gasto.categoria())
+                        .build()
+                ).toList();
 
         parcelaRepository.saveAll(parcelas);
 
-        return parcelas.stream()
-                .map(p -> new ParcelaResponseDTO(p.getNumero(), p.getValor(), p.getDataVencimento(), p.getGastoId(), p.getDescricao(), p.getCategoria()))
-                .toList();
+        return parcelas;
     }
 
-    public List<ParcelaResponseDTO> listarParcelasPorGasto(String gastoId) {
+    /**
+     * Lista parcelas por ID do gasto
+     */
+    public List<ParcelaResponseDTO> listarParcelasPorGasto(String gastoId, String usuarioId) {
         return parcelaRepository.findByGastoId(gastoId)
                 .stream()
+                .filter(p -> p.getUsuarioId().equals(usuarioId)) // 🔐 GARANTIA EXTRA
                 .map(ParcelaResponseDTO::fromRequest)
                 .toList();
     }
 
-    public List<ParcelaResponseDTO> buscarPorGastoId(String gastoId) {
+    /**
+     * Método alternativo (mantido por compatibilidade)
+     */
+    public List<ParcelaResponseDTO> buscarPorGastoId(String gastoId, String usuarioId) {
         return parcelaRepository.findByGastoId(gastoId)
                 .stream()
+                .filter(p -> p.getUsuarioId().equals(usuarioId)) // 🔐 GARANTIA EXTRA
                 .map(ParcelaResponseDTO::fromRequest)
                 .collect(Collectors.toList());
     }
 
-    public List<ParcelaResponseDTO> buscarPorMes(YearMonth mes) {
+    /**
+     * Busca parcelas do usuário por mês → usado no Dashboard
+     */
+    public List<ParcelaResponseDTO> buscarPorMes(YearMonth mes, String usuarioId) {
+
         LocalDate inicio = mes.atDay(1);
         LocalDate fim = mes.atEndOfMonth();
 
-        return parcelaRepository.findParcelasComGastoByDataVencimentoBetween(inicio, fim);
+        return parcelaRepository
+                .findByUsuarioIdAndDataVencimentoBetween(
+                        usuarioId,
+                        inicio,
+                        fim
+                ).stream()
+                .map(ParcelaResponseDTO::fromRequest)
+                .toList();
     }
 
-    public ResponseEntity<ParcelaResponseDTO> atualizarParcela(String id, ParcelaResponseDTO parcelaAtualizada) {
+    /**
+     * Atualiza uma parcela específica
+     */
+    public ResponseEntity<ParcelaResponseDTO> atualizarParcela(String id, ParcelaResponseDTO parcelaAtualizada, String usuarioId) {
+
         Parcela parcela = parcelaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Parcela não encontrada"));
+
+        // 🔐 Garante que o usuário só atualiza as próprias parcelas
+        if (!parcela.getUsuarioId().equals(usuarioId)) {
+            return ResponseEntity.status(403).build();
+        }
 
         parcela.setDescricao(parcelaAtualizada.descricao());
         parcela.setCategoria(parcelaAtualizada.categoria());
@@ -81,13 +113,24 @@ public class ParcelaService {
         return ResponseEntity.ok(ParcelaResponseDTO.fromRequest(salva));
     }
 
+    /**
+     * Deleta parcela + segurança por usuario
+     */
+    public ResponseEntity<Void> deletarParcela(String id, String usuarioId) {
 
-    public void deletarParcela(String id) {
-        if (!parcelaRepository.existsById(id)) {
-            ResponseEntity.notFound().build();
-            return;
+        Parcela parcela = parcelaRepository.findById(id)
+                .orElse(null);
+
+        if (parcela == null) {
+            return ResponseEntity.notFound().build();
         }
+
+        if (!parcela.getUsuarioId().equals(usuarioId)) {
+            return ResponseEntity.status(403).build();
+        }
+
         parcelaRepository.deleteById(id);
-        ResponseEntity.noContent().build();
+
+        return ResponseEntity.noContent().build();
     }
 }

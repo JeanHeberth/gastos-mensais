@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.YearMonth;
 import java.util.List;
 
 @RestController
@@ -47,11 +48,30 @@ public class GastoController {
         return gastoService.listarTodos(usuarioId);
     }
 
+
     @GetMapping("/{id}")
     public ResponseEntity<GastoResponseDTO> buscarPorId(@PathVariable String id) {
         String usuarioId = getUsuarioLogadoId();
         return gastoService.buscarPorId(id, usuarioId);
     }
+
+    @GetMapping("/mes/{anoMes}")
+    public ResponseEntity<List<GastoResponseDTO>> listarPorMes(@PathVariable String anoMes) {
+
+        String usuarioId = getUsuarioLogadoId();
+
+        // AnoMes vem no formato 2025-11
+        YearMonth mes = YearMonth.parse(anoMes);
+
+        List<GastoResponseDTO> gastos = gastoService.listarPorMes(mes, usuarioId);
+
+        if (gastos.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok(gastos);
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable String id) {

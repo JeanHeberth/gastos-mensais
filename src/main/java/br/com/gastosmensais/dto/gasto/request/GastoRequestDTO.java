@@ -4,7 +4,7 @@ import br.com.gastosmensais.entity.Gasto;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public record GastoRequestDTO(
 
@@ -27,7 +27,7 @@ public record GastoRequestDTO(
         Integer parcelas,
 
         @NotNull(message = "A data de compra é obrigatória.")
-        LocalDateTime dataCompra
+        LocalDate dataCompra
 ) {
     public static Gasto toEntity(GastoRequestDTO dto) {
         return Gasto.builder()

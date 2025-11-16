@@ -1,18 +1,16 @@
 package br.com.gastosmensais.service;
 
 import br.com.gastosmensais.dto.gasto.request.GastoRequestDTO;
-import br.com.gastosmensais.dto.parcela.response.ParcelaResponseDTO;
+import br.com.gastosmensais.entity.Parcela;
 import br.com.gastosmensais.repository.GastoRepository;
 import br.com.gastosmensais.repository.ParcelaRepository;
 import br.com.gastosmensais.util.TestDataFactory;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,39 +18,57 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ParcelaServiceTest {
 
     private ParcelaService parcelaService;
-
-    @Mock
     private ParcelaRepository parcelaRepository;
-
-    @Mock
     private GastoRepository gastoRepository;
 
     @BeforeEach
     void setUp() {
         parcelaRepository = Mockito.mock(ParcelaRepository.class);
-        parcelaService = new ParcelaService(parcelaRepository, gastoRepository);
+        gastoRepository = Mockito.mock(GastoRepository.class);
+        parcelaService = new ParcelaService(parcelaRepository);
     }
 
     @Test
     void deveGerarParcelasCorretamente() {
-        var gasto = TestDataFactory.criarGastoRequestPadrao();
+        // Arrange
+        GastoRequestDTO gasto = TestDataFactory.criarGastoRequestPadrao();
+        String gastoId = "Gasto123";
+        String usuarioId = "UserABC";
 
-        List<ParcelaResponseDTO> parcelas = parcelaService.gerarEGuardarParcelas(gasto, "Gastos123");
+        // Act
+        List<Parcela> parcelas = parcelaService.gerarEGuardarParcelas(gasto, gastoId, usuarioId);
 
+        // Assert
         assertThat(parcelas).hasSize(3);
-        assertThat(parcelas.get(0).valor()).isEqualTo(new BigDecimal("2000.00"));
-        assertThat(parcelas.get(0).dataVencimento()).isEqualTo("2025-11-06");
-        assertThat(parcelas.get(2).dataVencimento()).isEqualTo("2026-01-06");
+
+        // Primeira parcela
+        Parcela p1 = parcelas.get(0);
+        assertThat(p1.getValor()).isEqualTo(new BigDecimal("2000.00"));
+        assertThat(p1.getDataVencimento()).isEqualTo(LocalDate.of(2025, 11, 6));
+        assertThat(p1.getUsuarioId()).isEqualTo(usuarioId);
+        assertThat(p1.getGastoId()).isEqualTo(gastoId);
+
+        // Última parcela
+        Parcela p3 = parcelas.get(2);
+        assertThat(p3.getDataVencimento()).isEqualTo(LocalDate.of(2026, 1, 6));
     }
 
     @Test
     void deveGerarUmaParcelaQuandoNaoEspecificado() {
-        var gasto = TestDataFactory.criarGastoRequestPadrao();
+        // Arrange
+        GastoRequestDTO gasto = TestDataFactory.criarGastoRequestSemParcelas(); // precisa retornar parcelas=null
+        String gastoId = "Gasto123";
+        String usuarioId = "UserABC";
 
-        List<ParcelaResponseDTO> parcelas = parcelaService.gerarEGuardarParcelas(gasto, "Gastos123");
+        // Act
+        List<Parcela> parcelas = parcelaService.gerarEGuardarParcelas(gasto, gastoId, usuarioId);
 
-        assertThat(parcelas).hasSize(3);
-        assertThat(parcelas.get(0).valor()).isEqualTo(new BigDecimal("2000.00"));
-        assertThat(parcelas.get(0).dataVencimento()).isEqualTo("2025-11-06");
+        // Assert
+        assertThat(parcelas).hasSize(1);
+
+        Parcela p1 = parcelas.get(0);
+        assertThat(p1.getValor()).isEqualTo(gasto.valorTotal());
+        assertThat(p1.getDataVencimento()).isEqualTo(gasto.dataCompra());
+        assertThat(p1.getUsuarioId()).isEqualTo(usuarioId);
     }
 }

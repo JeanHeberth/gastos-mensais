@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +30,7 @@ public class GastoService {
 
     private final GastoRepository gastoRepository;
     private final ParcelaRepository parcelaRepository;
+    private final ParcelaService parcelaService;
 
     /**
      * Cria um novo gasto e gera as parcelas
@@ -41,7 +43,9 @@ public class GastoService {
 
         Gasto gastoSalvo = gastoRepository.save(gasto);
 
-        List<Parcela> parcelas = gerarParcelas(gastoSalvo);
+        List<Parcela> parcelas = parcelaService.gerarEGuardarParcelas(
+                request, gastoSalvo.getId(), gastoSalvo.getUsuarioId());
+
         parcelaRepository.saveAll(parcelas);
 
         return ResponseEntity
@@ -78,6 +82,7 @@ public class GastoService {
 
         Gasto gastoAtualizado = gastoRepository.save(gastoExistente);
 
+        // 🔁 Recalcula parcelas SEM perder o vínculo de usuário
         parcelaRepository.deleteByGastoId(gastoAtualizado.getId());
         List<Parcela> novasParcelas = gerarParcelas(gastoAtualizado);
         parcelaRepository.saveAll(novasParcelas);
@@ -86,6 +91,23 @@ public class GastoService {
 
         return ResponseEntity.ok(fromRequest(gastoAtualizado));
     }
+
+    public List<GastoResponseDTO> listarPorMes(YearMonth mes, String usuarioId) {
+
+        LocalDate inicio = mes.atDay(1);
+        LocalDate fim = mes.atEndOfMonth();
+
+        List<Gasto> gastos = gastoRepository.findByUsuarioIdAndDataCompraBetween(
+                usuarioId,
+                inicio,
+                fim
+        );
+
+        return gastos.stream()
+                .map(GastoResponseDTO::fromRequest)
+                .toList();
+    }
+
 
     /**
      * Exclui um gasto e suas parcelas associadas
@@ -114,6 +136,8 @@ public class GastoService {
      * Lista todos os gastos do usuário logado
      */
     public ResponseEntity<List<GastoResponseDTO>> listarTodos(String usuarioId) {
+        log.info("📄 Listando gastos do usuário {}", usuarioId);
+
         List<Gasto> gastos = gastoRepository.findAllByUsuarioId(usuarioId);
 
         if (gastos.isEmpty()) {
@@ -154,6 +178,10 @@ public class GastoService {
             parcela.setGastoId(gasto.getId());
             parcela.setDescricao(gasto.getDescricao());
             parcela.setCategoria(gasto.getCategoria());
+
+            // 🔐 ESSA LINHA É A CHAVE:
+            parcela.setUsuarioId(gasto.getUsuarioId());
+
             parcelas.add(parcela);
         }
 
