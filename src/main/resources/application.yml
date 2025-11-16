@@ -10,7 +10,7 @@ spring:
   data:
     mongodb:
       uri: mongodb+srv://admin:LuizJoao123@cluster.y2vw5.mongodb.net/
-      data-base: testandoMensal
+      data-base: gastos-mensaisDB
 
   jackson:
     time-zone: UTC

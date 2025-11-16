@@ -48,6 +48,7 @@ public class GastoController {
         return gastoService.listarTodos(usuarioId);
     }
 
+
     @GetMapping("/{id}")
     public ResponseEntity<GastoResponseDTO> buscarPorId(@PathVariable String id) {
         String usuarioId = getUsuarioLogadoId();
