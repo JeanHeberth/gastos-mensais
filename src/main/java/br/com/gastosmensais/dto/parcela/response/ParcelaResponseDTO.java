@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ParcelaResponseDTO(
+        String id,
         Integer numero,
         BigDecimal valor,
         LocalDate dataVencimento,
@@ -17,6 +18,7 @@ public record ParcelaResponseDTO(
 ) {
     public static ParcelaResponseDTO fromRequest(Parcela parcela) {
         return new ParcelaResponseDTO(
+                parcela.getId(),
                 parcela.getNumero(),
                 parcela.getValor(),
                 parcela.getDataVencimento(),

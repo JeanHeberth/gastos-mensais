@@ -5,7 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -23,6 +23,6 @@ public class Gasto {
     private String categoria;
     private String tipoPagamento;
     private Integer parcelas;
-    private LocalDateTime dataCompra;
+    private LocalDate dataCompra;
 
 }

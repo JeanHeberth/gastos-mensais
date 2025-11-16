@@ -68,7 +68,7 @@ class ParcelaServiceTest {
 
         Parcela p1 = parcelas.get(0);
         assertThat(p1.getValor()).isEqualTo(gasto.valorTotal());
-        assertThat(p1.getDataVencimento()).isEqualTo(gasto.dataCompra().toLocalDate());
+        assertThat(p1.getDataVencimento()).isEqualTo(gasto.dataCompra());
         assertThat(p1.getUsuarioId()).isEqualTo(usuarioId);
     }
 }

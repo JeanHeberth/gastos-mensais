@@ -19,7 +19,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -80,7 +80,7 @@ class ParcelaConsultaIT extends AbstractIntegrationTest {
                         .categoria("Tecnologia")
                         .tipoPagamento("Cartão")
                         .parcelas(3)
-                        .dataCompra(LocalDateTime.of(2025, 11, 6, 0, 0))
+                        .dataCompra(LocalDate.of(2025, 11, 6))
                         .usuarioId(usuarioId) // OBRIGATÓRIO
                         .build()
         );

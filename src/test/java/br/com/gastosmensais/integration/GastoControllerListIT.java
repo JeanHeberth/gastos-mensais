@@ -15,7 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -67,7 +67,7 @@ class GastoControllerListIT extends AbstractIntegrationTest {
                 .categoria("Serviços")
                 .tipoPagamento("Cartão")
                 .parcelas(1)
-                .dataCompra(LocalDateTime.of(2025, 11, 5, 0, 0))
+                .dataCompra(LocalDate.of(2025, 11, 5))
                 .build());
 
         gastoRepository.save(Gasto.builder()
@@ -77,7 +77,7 @@ class GastoControllerListIT extends AbstractIntegrationTest {
                 .categoria("Alimentação")
                 .tipoPagamento("Débito")
                 .parcelas(1)
-                .dataCompra(LocalDateTime.of(2025, 10, 15, 0, 0))
+                .dataCompra(LocalDate.of(2025, 10, 15))
                 .build());
     }
 
