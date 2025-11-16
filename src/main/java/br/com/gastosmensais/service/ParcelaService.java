@@ -37,7 +37,7 @@ public class ParcelaService {
                 .mapToObj(numero -> Parcela.builder()
                         .numero(numero)
                         .valor(valorParcela)
-                        .dataVencimento(gasto.dataCompra().toLocalDate().plusMonths(numero - 1))
+                        .dataVencimento(gasto.dataCompra().plusMonths(numero - 1))
                         .gastoId(gastoId)
                         .usuarioId(usuarioId) // 🔐 VÍNCULO COM DONO DO GASTO
                         .descricao(gasto.descricao())

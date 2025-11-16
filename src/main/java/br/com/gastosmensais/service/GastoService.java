@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -90,6 +91,23 @@ public class GastoService {
 
         return ResponseEntity.ok(fromRequest(gastoAtualizado));
     }
+
+    public List<GastoResponseDTO> listarPorMes(YearMonth mes, String usuarioId) {
+
+        LocalDate inicio = mes.atDay(1);
+        LocalDate fim = mes.atEndOfMonth();
+
+        List<Gasto> gastos = gastoRepository.findByUsuarioIdAndDataCompraBetween(
+                usuarioId,
+                inicio,
+                fim
+        );
+
+        return gastos.stream()
+                .map(GastoResponseDTO::fromRequest)
+                .toList();
+    }
+
 
     /**
      * Exclui um gasto e suas parcelas associadas

@@ -18,7 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -78,7 +78,7 @@ class GastoConsultaIT extends AbstractIntegrationTest {
                 "Tecnologia",
                 "Cartão",
                 3,
-                LocalDateTime.of(2025, 11, 6, 0, 0)
+                LocalDate.of(2025, 11, 6)
         );
 
         String token = testAuthUtil.gerarTokenParaUsuarioPadrao();

@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -55,7 +55,7 @@ class DashboardControllerIT extends AbstractIntegrationTest {
                 .tipoPagamento("Cartão")
                 .parcelas(3)
                 .usuarioId(usuarioId)
-                .dataCompra(LocalDateTime.of(2025, 11, 5, 0, 0))
+                .dataCompra(LocalDate.of(2025, 11, 5))
                 .build());
 
         // Gasto 2 - Supermercado à vista
@@ -66,7 +66,7 @@ class DashboardControllerIT extends AbstractIntegrationTest {
                 .tipoPagamento("Débito")
                 .parcelas(1)
                 .usuarioId(usuarioId)
-                .dataCompra(LocalDateTime.of(2025, 11, 8, 0, 0))
+                .dataCompra(LocalDate.of(2025, 11, 8))
                 .build());
 
         parcelaRepository.saveAll(List.of(
