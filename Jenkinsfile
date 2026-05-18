@@ -12,9 +12,6 @@ pipeline {
 
     stages {
 
-        // =========================================================
-        // 1️⃣ CHECKOUT
-        // =========================================================
         stage('Checkout') {
             steps {
                 echo "🔄 Clonando o repositório..."
@@ -22,33 +19,29 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // 2️⃣ BUILD
-        // =========================================================
-        stage('Build') {
+        stage('Build WAR') {
             steps {
                 script {
-                    echo "⚙️ Executando build do projeto..."
+                    echo "📦 Gerando arquivo WAR..."
+
                     if (isUnix()) {
-                        sh './gradlew clean build -x test'
+                        sh './gradlew clean bootWar -x test'
                     } else {
-                        bat 'gradlew clean build -x test'
+                        bat 'gradlew.bat clean bootWar -x test'
                     }
                 }
             }
         }
 
-        // =========================================================
-        // 3️⃣ UNIT TESTS - SERVICE
-        // =========================================================
         stage('Unit Tests - Service') {
             steps {
                 script {
                     echo "🧪 Executando testes unitários da camada Service..."
+
                     if (isUnix()) {
                         sh './gradlew test --tests "br.com.gastosmensais.service.*"'
                     } else {
-                        bat 'gradlew test --tests "br.com.gastosmensais.service.*"'
+                        bat 'gradlew.bat test --tests "br.com.gastosmensais.service.*"'
                     }
                 }
             }
@@ -59,17 +52,15 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // 4️⃣ INTEGRATION TESTS
-        // =========================================================
-        stage('Integration Tests') {
+        stage('Integration Tests - Controller') {
             steps {
                 script {
-                    echo "🔗 Executando testes de integração..."
+                    echo "🔗 Executando testes de integração da camada Controller..."
+
                     if (isUnix()) {
                         sh './gradlew test --tests "br.com.gastosmensais.controller.*"'
                     } else {
-                        bat 'gradlew test --tests "br.com.gastosmensais.controller.*"'
+                        bat 'gradlew.bat test --tests "br.com.gastosmensais.controller.*"'
                     }
                 }
             }
@@ -80,46 +71,48 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // 5️⃣ REPORTS & COVERAGE
-        // =========================================================
         stage('Reports & Coverage') {
             steps {
                 script {
-                    echo "📊 Gerando relatórios de cobertura Jacoco..."
+                    echo "📊 Gerando relatório Jacoco..."
+
                     if (isUnix()) {
                         sh './gradlew jacocoTestReport -x jacocoTestCoverageVerification'
                     } else {
-                        bat 'gradlew jacocoTestReport -x jacocoTestCoverageVerification'
+                        bat 'gradlew.bat jacocoTestReport -x jacocoTestCoverageVerification'
                     }
                 }
             }
             post {
                 always {
                     junit '**/build/test-results/test/TEST-*.xml'
+
                     publishHTML(target: [
                         reportDir: 'build/reports/jacoco/test/html',
                         reportFiles: 'index.html',
-                        reportName: 'Jacoco Coverage Report'
+                        reportName: 'Jacoco Coverage Report',
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true,
+                        allowMissing: true
                     ])
                 }
             }
         }
 
-        // =========================================================
-        // 6️⃣ UPLOAD TO CODECOV
-        // =========================================================
         stage('Upload Coverage to Codecov') {
             steps {
                 script {
-                    echo "☁️ Enviando relatório de cobertura para Codecov..."
+                    echo "☁️ Enviando cobertura para Codecov..."
+
                     if (isUnix()) {
-                        sh 'curl -s https://codecov.io/bash | bash -s -- -t ${CODECOV_TOKEN}'
+                        sh '''
+                            curl -Os https://uploader.codecov.io/latest/macos/codecov
+                            chmod +x codecov
+                            ./codecov -t "$CODECOV_TOKEN" -f build/reports/jacoco/test/jacocoTestReport.xml
+                        '''
                     } else {
                         bat '''
-                            echo Baixando Codecov para Windows...
                             curl -L -o codecov.exe https://uploader.codecov.io/latest/windows/codecov.exe
-                            echo Enviando relatório de cobertura...
                             codecov.exe -t %CODECOV_TOKEN% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
                         '''
                     }
@@ -127,58 +120,46 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // 7️⃣ DEPLOY WAR TO TOMCAT (Windows)
-        // =========================================================
         stage('Deploy WAR to Tomcat') {
-            steps {
-                script {
-                    echo "🚀 Copiando WAR para a pasta do Tomcat..."
-
-                    // Caminhos configuráveis
-                    def sourceWar = "build\\libs\\gastos-mensais.war"
-                    def tomcatWebapps = "C:\\apache-tomcat-11.0.11\\webapps"
-
-                    // Copia o WAR gerado para o Tomcat
-                    bat """
-                        echo Copiando arquivo WAR para o Tomcat...
-                        copy /Y "${sourceWar}" "${tomcatWebapps}\\gastos-mensais.war"
-                    """
-
-                    // Reinicia o serviço Tomcat
-                    bat """
-                        echo Reiniciando serviço Tomcat...
-                        net stop Tomcat11
-                        net start Tomcat11
-                    """
-                }
-            }
-        }
-
-        // =========================================================
-        // 8️⃣ DEPLOY TO TOMCAT (Script-based)
-        // =========================================================
-        stage('Deploy to Tomcat via Script') {
             when {
                 branch 'main'
             }
             steps {
                 script {
-                    echo "🚀 Iniciando deploy automático no Tomcat 11..."
+                    echo "🚀 Publicando WAR no Tomcat..."
+
                     if (isUnix()) {
-                        sh './scripts/deploy_tomcat.sh'
+                        sh '''
+                            WAR_ORIGEM="build/libs/gastos-mensais.war"
+                            TOMCAT_WEBAPPS="${TOMCAT_WEBAPPS:-/opt/homebrew/opt/tomcat/libexec/webapps}"
+
+                            echo "Copiando WAR..."
+                            cp "$WAR_ORIGEM" "$TOMCAT_WEBAPPS/gastos-mensais.war"
+
+                            echo "Reiniciando Tomcat..."
+                            brew services restart tomcat || true
+                        '''
                     } else {
-                        bat 'powershell -ExecutionPolicy Bypass -File deploy_tomcat.ps1'
+                        bat '''
+                            set WAR_ORIGEM=build\\libs\\gastos-mensais.war
+
+                            if "%TOMCAT_WEBAPPS%"=="" (
+                                set TOMCAT_WEBAPPS=C:\\apache-tomcat-11.0.11\\webapps
+                            )
+
+                            echo Copiando WAR...
+                            copy /Y "%WAR_ORIGEM%" "%TOMCAT_WEBAPPS%\\gastos-mensais.war"
+
+                            echo Reiniciando Tomcat...
+                            net stop Tomcat11
+                            net start Tomcat11
+                        '''
                     }
-                    echo "✅ Deploy finalizado com sucesso! WAR atualizado no Tomcat 🎯"
                 }
             }
         }
     }
 
-    // =========================================================
-    // 🔄 POST ACTIONS
-    // =========================================================
     post {
         always {
             echo '✅ Pipeline concluído.'
