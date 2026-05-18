@@ -1,3 +1,13 @@
+def runByOs(String unixCmd, String windowsCmd) {
+    if (isUnix()) {
+        sh unixCmd
+    } else if ((env.OS ?: '').toLowerCase().contains('windows')) {
+        bat windowsCmd
+    } else {
+        error("Nó incompatível para execução do pipeline. NODE_NAME=${env.NODE_NAME}, OS=${env.OS}")
+    }
+}
+
 pipeline {
     agent any
 
@@ -23,12 +33,7 @@ pipeline {
             steps {
                 script {
                     echo "📦 Gerando arquivo WAR..."
-
-                    if (isUnix()) {
-                        sh './gradlew clean bootWar -x test'
-                    } else {
-                        bat 'gradlew.bat clean bootWar -x test'
-                    }
+                    runByOs('./gradlew clean bootWar -x test', 'gradlew.bat clean bootWar -x test')
                 }
             }
         }
@@ -37,12 +42,7 @@ pipeline {
             steps {
                 script {
                     echo "🧪 Executando testes unitários da camada Service..."
-
-                    if (isUnix()) {
-                        sh './gradlew test --tests "br.com.gastosmensais.service.*"'
-                    } else {
-                        bat 'gradlew.bat test --tests "br.com.gastosmensais.service.*"'
-                    }
+                    runByOs('./gradlew test --tests "br.com.gastosmensais.service.*"', 'gradlew.bat test --tests "br.com.gastosmensais.service.*"')
                 }
             }
             post {
@@ -56,12 +56,7 @@ pipeline {
             steps {
                 script {
                     echo "🔗 Executando testes de integração da camada Controller..."
-
-                    if (isUnix()) {
-                        sh './gradlew test --tests "br.com.gastosmensais.controller.*"'
-                    } else {
-                        bat 'gradlew.bat test --tests "br.com.gastosmensais.controller.*"'
-                    }
+                    runByOs('./gradlew test --tests "br.com.gastosmensais.controller.*"', 'gradlew.bat test --tests "br.com.gastosmensais.controller.*"')
                 }
             }
             post {
@@ -75,12 +70,7 @@ pipeline {
             steps {
                 script {
                     echo "📊 Gerando relatório Jacoco..."
-
-                    if (isUnix()) {
-                        sh './gradlew jacocoTestReport -x jacocoTestCoverageVerification'
-                    } else {
-                        bat 'gradlew.bat jacocoTestReport -x jacocoTestCoverageVerification'
-                    }
+                    runByOs('./gradlew jacocoTestReport -x jacocoTestCoverageVerification', 'gradlew.bat jacocoTestReport -x jacocoTestCoverageVerification')
                 }
             }
             post {
@@ -104,18 +94,17 @@ pipeline {
                 script {
                     echo "☁️ Enviando cobertura para Codecov..."
 
-                    if (isUnix()) {
-                        sh '''
+                    runByOs(
+                        '''
                             curl -Os https://uploader.codecov.io/latest/macos/codecov
                             chmod +x codecov
                             ./codecov -t "$CODECOV_TOKEN" -f build/reports/jacoco/test/jacocoTestReport.xml
+                        '''.stripIndent(),
                         '''
-                    } else {
-                        bat '''
                             curl -L -o codecov.exe https://uploader.codecov.io/latest/windows/codecov.exe
                             codecov.exe -t %CODECOV_TOKEN% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
-                        '''
-                    }
+                        '''.stripIndent()
+                    )
                 }
             }
         }
@@ -128,8 +117,8 @@ pipeline {
                 script {
                     echo "🚀 Publicando WAR no Tomcat..."
 
-                    if (isUnix()) {
-                        sh '''
+                    runByOs(
+                        '''
                             WAR_ORIGEM="build/libs/gastos-mensais.war"
                             TOMCAT_WEBAPPS="${TOMCAT_WEBAPPS:-/opt/homebrew/opt/tomcat/libexec/webapps}"
 
@@ -138,9 +127,8 @@ pipeline {
 
                             echo "Reiniciando Tomcat..."
                             brew services restart tomcat || true
+                        '''.stripIndent(),
                         '''
-                    } else {
-                        bat '''
                             set WAR_ORIGEM=build\\libs\\gastos-mensais.war
 
                             if "%TOMCAT_WEBAPPS%"=="" (
@@ -153,8 +141,8 @@ pipeline {
                             echo Reiniciando Tomcat...
                             net stop Tomcat11
                             net start Tomcat11
-                        '''
-                    }
+                        '''.stripIndent()
+                    )
                 }
             }
         }
