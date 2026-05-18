@@ -126,7 +126,6 @@ pipeline {
                 }
             }
         }
-
         stage('Debug Branch') {
             steps {
                 script {
