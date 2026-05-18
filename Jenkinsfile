@@ -128,49 +128,56 @@ pipeline {
         }
 
         // =========================================================
-        // 7️⃣ DEPLOY WAR TO TOMCAT (Windows)
+        // 7️⃣ DEPLOY WAR TO TOMCAT (Main/Master only)
         // =========================================================
         stage('Deploy WAR to Tomcat') {
-            steps {
-                script {
-                    echo "🚀 Copiando WAR para a pasta do Tomcat..."
-
-                    // Caminhos configuráveis
-                    def sourceWar = "build\\libs\\gastos-mensais.war"
-                    def tomcatWebapps = "C:\\apache-tomcat-11.0.11\\webapps"
-
-                    // Copia o WAR gerado para o Tomcat
-                    bat """
-                        echo Copiando arquivo WAR para o Tomcat...
-                        copy /Y "${sourceWar}" "${tomcatWebapps}\\gastos-mensais.war"
-                    """
-
-                    // Reinicia o serviço Tomcat
-                    bat """
-                        echo Reiniciando serviço Tomcat...
-                        net stop Tomcat11
-                        net start Tomcat11
-                    """
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'master'
+                    allOf {
+                        changeRequest()
+                        expression { ['main', 'master'].contains(env.CHANGE_TARGET) }
+                    }
                 }
             }
-        }
-
-        // =========================================================
-        // 8️⃣ DEPLOY TO TOMCAT (Script-based)
-        // =========================================================
-        stage('Deploy to Tomcat via Script') {
-            when {
-                branch 'main'
-            }
             steps {
                 script {
-                    echo "🚀 Iniciando deploy automático no Tomcat 11..."
+                    echo "🚀 Exportando WAR para o Tomcat (main/master)..."
+
                     if (isUnix()) {
-                        sh './scripts/deploy_tomcat.sh'
+                        sh '''
+                            SOURCE_WAR="${WORKSPACE}/build/libs/gastos-mensais.war"
+                            DEST_WAR="/opt/homebrew/opt/tomcat/libexec/webapps/gastos-mensais.war"
+
+                            echo "Verificando WAR gerado em: $SOURCE_WAR"
+                            [ -f "$SOURCE_WAR" ] || { echo "WAR nao encontrado em $SOURCE_WAR"; exit 1; }
+
+                            echo "Copiando WAR para: $DEST_WAR"
+                            cp "$SOURCE_WAR" "$DEST_WAR"
+
+                            echo "Deploy concluido com sucesso em $DEST_WAR"
+                        '''
+                    } else if ((env.OS ?: '').toLowerCase().contains('windows')) {
+                        bat '''
+                            set SOURCE_WAR=%WORKSPACE%\\build\\libs\\gastos-mensais.war
+                            if "%TOMCAT_WEBAPPS%"=="" (
+                                set TOMCAT_WEBAPPS=C:\\apache-tomcat-11.0.11\\webapps
+                            )
+                            set DEST_WAR=%TOMCAT_WEBAPPS%\\gastos-mensais.war
+
+                            echo Verificando WAR gerado em: %SOURCE_WAR%
+                            if not exist "%SOURCE_WAR%" (
+                                echo WAR nao encontrado em %SOURCE_WAR%
+                                exit /b 1
+                            )
+
+                            echo Copiando WAR para: %DEST_WAR%
+                            copy /Y "%SOURCE_WAR%" "%DEST_WAR%"
+                        '''
                     } else {
-                        bat 'powershell -ExecutionPolicy Bypass -File deploy_tomcat.ps1'
+                        error("Nó incompatível para deploy. NODE_NAME=${env.NODE_NAME}, OS=${env.OS}")
                     }
-                    echo "✅ Deploy finalizado com sucesso! WAR atualizado no Tomcat 🎯"
                 }
             }
         }
