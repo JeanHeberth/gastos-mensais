@@ -126,6 +126,20 @@ pipeline {
                 }
             }
         }
+        stage('Debug Branch') {
+            steps {
+                script {
+                    echo "================ DEBUG BRANCH ================"
+                    echo "BRANCH_NAME=${env.BRANCH_NAME}"
+                    echo "CHANGE_BRANCH=${env.CHANGE_BRANCH}"
+                    echo "CHANGE_TARGET=${env.CHANGE_TARGET}"
+                    echo "GIT_BRANCH=${env.GIT_BRANCH}"
+                    echo "NODE_NAME=${env.NODE_NAME}"
+                    echo "OS=${env.OS}"
+                    echo "============================================="
+                }
+            }
+        }
 
         // =========================================================
         // 7️⃣ DEPLOY WAR TO TOMCAT (Main/Master only)
