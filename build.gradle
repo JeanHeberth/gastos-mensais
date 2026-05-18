@@ -54,6 +54,14 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
+
+    environment 'DOCKER_HOST', 'unix:///Users/jeanheberth/Library/Containers/com.docker.docker/Data/docker.raw.sock'
+    environment 'DOCKER_API_VERSION', '1.47'
+    environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+
+    systemProperty 'docker.host', 'unix:///Users/jeanheberth/Library/Containers/com.docker.docker/Data/docker.raw.sock'
+    systemProperty 'api.version', '1.47'
+    systemProperty 'org.testcontainers.ryuk.disabled', 'true'
 }
 
 jacocoTestReport {

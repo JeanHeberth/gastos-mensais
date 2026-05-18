@@ -87,7 +87,6 @@ class AuthControllerIT extends AbstractIntegrationTest {
                 .build());
 
         LoginRequestDTO request = new LoginRequestDTO("jean@example.com", "senhaErrada");
-
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
