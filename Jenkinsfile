@@ -152,13 +152,6 @@ pipeline {
             }
             steps {
                 script {
-                    echo "🚀 Exportando WAR para o Tomcat..."
-                    // restante do seu deploy
-                }
-            }
-        }
-            steps {
-                script {
                     echo "🚀 Exportando WAR para o Tomcat (main/master)..."
 
                     if (isUnix()) {
