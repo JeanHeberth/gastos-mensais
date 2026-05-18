@@ -146,15 +146,17 @@ pipeline {
         // =========================================================
         stage('Deploy WAR to Tomcat') {
             when {
-                anyOf {
-                    branch 'main'
-                    branch 'master'
-                    allOf {
-                        changeRequest()
-                        expression { ['main', 'master'].contains(env.CHANGE_TARGET) }
-                    }
+                expression {
+                    return env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'origin/master'
                 }
             }
+            steps {
+                script {
+                    echo "🚀 Exportando WAR para o Tomcat..."
+                    // restante do seu deploy
+                }
+            }
+        }
             steps {
                 script {
                     echo "🚀 Exportando WAR para o Tomcat (main/master)..."
