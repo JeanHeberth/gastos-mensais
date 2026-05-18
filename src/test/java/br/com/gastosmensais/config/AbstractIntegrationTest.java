@@ -23,7 +23,7 @@ public abstract class AbstractIntegrationTest {
     }
 
     static {
-        mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:latest"))
+        mongoDBContainer = new MongoDBContainer(DockerImageName.parse("mongo:7.0"))
                 .withExposedPorts(27017)
                 .withReuse(true);
         mongoDBContainer.start();
