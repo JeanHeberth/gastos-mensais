@@ -6,15 +6,8 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 @SpringBootApplication
-public class GastosMensaisApplication extends SpringBootServletInitializer {
-
-    @Override
-    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
-        return application.sources(GastosMensaisApplication.class);
-    }
-
+public class GastosMensaisApplication {
     public static void main(String[] args) {
         SpringApplication.run(GastosMensaisApplication.class, args);
     }
-
 }
