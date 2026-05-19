@@ -39,3 +39,6 @@ out/
 ### GitHub Copilot Agents ###
 .github/agents
 
+# macOS
+.DS_Store
+
