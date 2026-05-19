@@ -9,7 +9,7 @@ spring:
     name: gastos-mensais
   data:
     mongodb:
-      uri: "${MONGO_URI_NUVEM}/gastosmensaisDB?retryWrites=true&w=majority"
+      uri: "${MONGO_URI_NUVEM}/gastos-mensaisDB?retryWrites=true&w=majority"
 
   jackson:
     time-zone: UTC
