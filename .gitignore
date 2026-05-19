@@ -39,6 +39,10 @@ out/
 ### GitHub Copilot Agents ###
 .github/agents
 
+### Variáveis de ambiente sensíveis ###
+.env
+.env.local
+.env.*
 # macOS
 .DS_Store
 
