@@ -9,8 +9,8 @@ spring:
     name: gastos-mensais
   data:
     mongodb:
-      uri: mongodb+srv://admin:LuizJoao123@cluster.y2vw5.mongodb.net/
-      data-base: gastos-mensaisDB
+      uri: ${MONGODB_URI}
+      data-base: ${MONGODB_DATABASE}
 
   jackson:
     time-zone: UTC
@@ -19,8 +19,8 @@ spring:
       WRITE_DATES_AS_TIMESTAMPS: false
 
 jwt:
-  secret: minha-chave-super-secreta-e-segura-minha-chave-super-secreta-e-segura
-  expiration: 86400000
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION}
 
 logging:
   level:
