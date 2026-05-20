@@ -126,72 +126,49 @@ pipeline {
                 }
             }
         }
-        stage('Debug Branch') {
-            steps {
-                script {
-                    echo "================ DEBUG BRANCH ================"
-                    echo "BRANCH_NAME=${env.BRANCH_NAME}"
-                    echo "CHANGE_BRANCH=${env.CHANGE_BRANCH}"
-                    echo "CHANGE_TARGET=${env.CHANGE_TARGET}"
-                    echo "GIT_BRANCH=${env.GIT_BRANCH}"
-                    echo "NODE_NAME=${env.NODE_NAME}"
-                    echo "OS=${env.OS}"
-                    echo "============================================="
-                }
-            }
-        }
-
         // =========================================================
         // 7️⃣ DEPLOY WAR TO TOMCAT (Main/Master only)
+        // Cada Jenkins (macOS ou Windows) faz deploy no seu proprio Tomcat.
+        // Nao requer agentes com labels especificos.
         // =========================================================
         stage('Deploy WAR to Tomcat') {
             when {
                 expression {
-                    def target = (env.CHANGE_TARGET ?: '').toLowerCase()
-                    def branch = (env.BRANCH_NAME ?: '').toLowerCase()
-                    def gitBranch = (env.GIT_BRANCH ?: '').toLowerCase()
+                    def target    = (env.CHANGE_TARGET ?: '').toLowerCase()
+                    def branch    = (env.BRANCH_NAME   ?: '').toLowerCase()
+                    def gitBranch = (env.GIT_BRANCH    ?: '').toLowerCase()
 
                     return ['main', 'master'].contains(target) ||
                            ['main', 'master'].contains(branch) ||
                            ['origin/main', 'origin/master', 'main', 'master'].contains(gitBranch)
                 }
             }
-            failFast true
-            parallel {
-                stage('Deploy Tomcat macOS') {
-                    agent { label 'mac' }
-                    options {
-                        timeout(time: 10, unit: 'MINUTES')
-                    }
-                    steps {
+            options {
+                timeout(time: 10, unit: 'MINUTES')
+            }
+            steps {
+                script {
+                    echo "🚀 Exportando WAR para o Tomcat (main/master) no node: ${env.NODE_NAME}..."
+
+                    if (isUnix()) {
                         sh '''
                             SOURCE_WAR="$WORKSPACE/build/libs/gastos-mensais.war"
                             TOMCAT_WEBAPPS="${TOMCAT_WEBAPPS:-/opt/homebrew/opt/tomcat/libexec/webapps}"
                             DEST_WAR="$TOMCAT_WEBAPPS/gastos-mensais.war"
 
-                            echo "Preparando deploy macOS no node: $NODE_NAME"
-                            if [ ! -f "$SOURCE_WAR" ]; then
-                                echo "WAR nao encontrado em $SOURCE_WAR. Gerando bootWar neste agente..."
-                                ./gradlew clean bootWar -x test
-                            fi
+                            echo "Node: $NODE_NAME | SO: macOS/Linux"
+                            echo "Verificando WAR em: $SOURCE_WAR"
+                            [ -f "$SOURCE_WAR" ] || { echo "ERRO: WAR nao encontrado em $SOURCE_WAR"; exit 1; }
 
-                            [ -f "$SOURCE_WAR" ] || { echo "WAR nao encontrado apos build: $SOURCE_WAR"; exit 1; }
-                            [ -d "$TOMCAT_WEBAPPS" ] || { echo "Diretorio Tomcat nao encontrado: $TOMCAT_WEBAPPS"; exit 1; }
+                            echo "Verificando diretorio Tomcat: $TOMCAT_WEBAPPS"
+                            [ -d "$TOMCAT_WEBAPPS" ] || { echo "ERRO: Diretorio Tomcat nao encontrado: $TOMCAT_WEBAPPS"; exit 1; }
 
                             echo "Copiando WAR para: $DEST_WAR"
                             cp "$SOURCE_WAR" "$DEST_WAR"
 
-                            echo "Deploy macOS concluido com sucesso em $DEST_WAR"
+                            echo "✅ Deploy macOS concluido com sucesso em $DEST_WAR"
                         '''
-                    }
-                }
-
-                stage('Deploy Tomcat Windows') {
-                    agent { label 'windows' }
-                    options {
-                        timeout(time: 10, unit: 'MINUTES')
-                    }
-                    steps {
+                    } else {
                         bat '''
                             set SOURCE_WAR=%WORKSPACE%\\build\\libs\\gastos-mensais.war
                             if "%TOMCAT_WEBAPPS%"=="" (
@@ -199,19 +176,16 @@ pipeline {
                             )
                             set DEST_WAR=%TOMCAT_WEBAPPS%\\gastos-mensais.war
 
-                            echo Preparando deploy Windows no node: %NODE_NAME%
+                            echo Node: %NODE_NAME% ^| SO: Windows
+                            echo Verificando WAR em: %SOURCE_WAR%
                             if not exist "%SOURCE_WAR%" (
-                                echo WAR nao encontrado em %SOURCE_WAR%. Gerando bootWar neste agente...
-                                call gradlew.bat clean bootWar -x test
-                            )
-
-                            if not exist "%SOURCE_WAR%" (
-                                echo WAR nao encontrado apos build: %SOURCE_WAR%
+                                echo ERRO: WAR nao encontrado em %SOURCE_WAR%
                                 exit /b 1
                             )
 
+                            echo Verificando diretorio Tomcat: %TOMCAT_WEBAPPS%
                             if not exist "%TOMCAT_WEBAPPS%" (
-                                echo Diretorio Tomcat nao encontrado: %TOMCAT_WEBAPPS%
+                                echo ERRO: Diretorio Tomcat nao encontrado: %TOMCAT_WEBAPPS%
                                 exit /b 1
                             )
 
