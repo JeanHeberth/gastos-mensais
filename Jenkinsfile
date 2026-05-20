@@ -147,27 +147,51 @@ pipeline {
         stage('Deploy WAR to Tomcat') {
             when {
                 expression {
-                    return env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'origin/master'
+                    def target = (env.CHANGE_TARGET ?: '').toLowerCase()
+                    def branch = (env.BRANCH_NAME ?: '').toLowerCase()
+                    def gitBranch = (env.GIT_BRANCH ?: '').toLowerCase()
+
+                    return ['main', 'master'].contains(target) ||
+                           ['main', 'master'].contains(branch) ||
+                           ['origin/main', 'origin/master', 'main', 'master'].contains(gitBranch)
                 }
             }
-            steps {
-                script {
-                    echo "🚀 Exportando WAR para o Tomcat (main/master)..."
-
-                    if (isUnix()) {
+            failFast true
+            parallel {
+                stage('Deploy Tomcat macOS') {
+                    agent { label 'mac' }
+                    options {
+                        timeout(time: 10, unit: 'MINUTES')
+                    }
+                    steps {
                         sh '''
-                            SOURCE_WAR="${WORKSPACE}/build/libs/gastos-mensais.war"
-                            DEST_WAR="/opt/homebrew/opt/tomcat/libexec/webapps/gastos-mensais.war"
+                            SOURCE_WAR="$WORKSPACE/build/libs/gastos-mensais.war"
+                            TOMCAT_WEBAPPS="${TOMCAT_WEBAPPS:-/opt/homebrew/opt/tomcat/libexec/webapps}"
+                            DEST_WAR="$TOMCAT_WEBAPPS/gastos-mensais.war"
 
-                            echo "Verificando WAR gerado em: $SOURCE_WAR"
-                            [ -f "$SOURCE_WAR" ] || { echo "WAR nao encontrado em $SOURCE_WAR"; exit 1; }
+                            echo "Preparando deploy macOS no node: $NODE_NAME"
+                            if [ ! -f "$SOURCE_WAR" ]; then
+                                echo "WAR nao encontrado em $SOURCE_WAR. Gerando bootWar neste agente..."
+                                ./gradlew clean bootWar -x test
+                            fi
+
+                            [ -f "$SOURCE_WAR" ] || { echo "WAR nao encontrado apos build: $SOURCE_WAR"; exit 1; }
+                            [ -d "$TOMCAT_WEBAPPS" ] || { echo "Diretorio Tomcat nao encontrado: $TOMCAT_WEBAPPS"; exit 1; }
 
                             echo "Copiando WAR para: $DEST_WAR"
                             cp "$SOURCE_WAR" "$DEST_WAR"
 
-                            echo "Deploy concluido com sucesso em $DEST_WAR"
+                            echo "Deploy macOS concluido com sucesso em $DEST_WAR"
                         '''
-                    } else if ((env.OS ?: '').toLowerCase().contains('windows')) {
+                    }
+                }
+
+                stage('Deploy Tomcat Windows') {
+                    agent { label 'windows' }
+                    options {
+                        timeout(time: 10, unit: 'MINUTES')
+                    }
+                    steps {
                         bat '''
                             set SOURCE_WAR=%WORKSPACE%\\build\\libs\\gastos-mensais.war
                             if "%TOMCAT_WEBAPPS%"=="" (
@@ -175,17 +199,27 @@ pipeline {
                             )
                             set DEST_WAR=%TOMCAT_WEBAPPS%\\gastos-mensais.war
 
-                            echo Verificando WAR gerado em: %SOURCE_WAR%
+                            echo Preparando deploy Windows no node: %NODE_NAME%
                             if not exist "%SOURCE_WAR%" (
-                                echo WAR nao encontrado em %SOURCE_WAR%
+                                echo WAR nao encontrado em %SOURCE_WAR%. Gerando bootWar neste agente...
+                                call gradlew.bat clean bootWar -x test
+                            )
+
+                            if not exist "%SOURCE_WAR%" (
+                                echo WAR nao encontrado apos build: %SOURCE_WAR%
+                                exit /b 1
+                            )
+
+                            if not exist "%TOMCAT_WEBAPPS%" (
+                                echo Diretorio Tomcat nao encontrado: %TOMCAT_WEBAPPS%
                                 exit /b 1
                             )
 
                             echo Copiando WAR para: %DEST_WAR%
                             copy /Y "%SOURCE_WAR%" "%DEST_WAR%"
+
+                            echo Deploy Windows concluido com sucesso em %DEST_WAR%
                         '''
-                    } else {
-                        error("Nó incompatível para deploy. NODE_NAME=${env.NODE_NAME}, OS=${env.OS}")
                     }
                 }
             }
