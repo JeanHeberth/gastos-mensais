@@ -85,5 +85,5 @@ jacocoTestReport {
 
 bootWar{
     enabled = true
-    archiveFileName = 'gastos-mensais.war'
+    archiveFileName = "${rootProject.name}.war"
 }
