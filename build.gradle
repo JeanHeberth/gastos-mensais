@@ -83,7 +83,11 @@ jacocoTestReport {
     }
 }
 
-bootWar{
+war {
+    enabled = false
+}
+
+bootWar {
     enabled = true
     archiveFileName = "${rootProject.name}.war"
 }
