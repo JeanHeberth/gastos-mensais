@@ -8,49 +8,27 @@ pipeline {
     environment {
         CODECOV_TOKEN = credentials('CODECOV_TOKEN_GASTOS_MENSAIS')
         GITHUB_TOKEN  = credentials('GITHUB_TOKEN')
+        TOMCAT_WEBAPPS = 'C:\\apache-tomcat-11.0.11\\webapps'
     }
 
     stages {
 
-        // =========================================================
-        // 1️⃣ CHECKOUT
-        // =========================================================
         stage('Checkout') {
             steps {
-                echo "🔄 Clonando o repositório..."
+                echo "Clonando repositório..."
                 checkout scm
             }
         }
 
-        // =========================================================
-        // 2️⃣ BUILD
-        // =========================================================
         stage('Build') {
             steps {
-                script {
-                    echo "⚙️ Executando build do projeto..."
-                    if (isUnix()) {
-                        sh './gradlew clean build -x test'
-                    } else {
-                        bat 'gradlew clean build -x test'
-                    }
-                }
+                bat 'gradlew clean build -x test'
             }
         }
 
-        // =========================================================
-        // 3️⃣ UNIT TESTS - SERVICE
-        // =========================================================
         stage('Unit Tests - Service') {
             steps {
-                script {
-                    echo "🧪 Executando testes unitários da camada Service..."
-                    if (isUnix()) {
-                        sh './gradlew test --tests "br.com.gastosmensais.service.*"'
-                    } else {
-                        bat 'gradlew test --tests "br.com.gastosmensais.service.*"'
-                    }
-                }
+                bat 'gradlew test --tests "br.com.gastosmensais.service.*"'
             }
             post {
                 always {
@@ -59,19 +37,9 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // 4️⃣ INTEGRATION TESTS
-        // =========================================================
         stage('Integration Tests') {
             steps {
-                script {
-                    echo "🔗 Executando testes de integração..."
-                    if (isUnix()) {
-                        sh './gradlew test --tests "br.com.gastosmensais.controller.*"'
-                    } else {
-                        bat 'gradlew test --tests "br.com.gastosmensais.controller.*"'
-                    }
-                }
+                bat 'gradlew test --tests "br.com.gastosmensais.controller.*"'
             }
             post {
                 always {
@@ -80,19 +48,9 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // 5️⃣ REPORTS & COVERAGE
-        // =========================================================
         stage('Reports & Coverage') {
             steps {
-                script {
-                    echo "📊 Gerando relatórios de cobertura Jacoco..."
-                    if (isUnix()) {
-                        sh './gradlew jacocoTestReport -x jacocoTestCoverageVerification'
-                    } else {
-                        bat 'gradlew jacocoTestReport -x jacocoTestCoverageVerification'
-                    }
-                }
+                bat 'gradlew jacocoTestReport -x jacocoTestCoverageVerification'
             }
             post {
                 always {
@@ -106,112 +64,58 @@ pipeline {
             }
         }
 
-        // =========================================================
-        // 6️⃣ UPLOAD TO CODECOV
-        // =========================================================
         stage('Upload Coverage to Codecov') {
             steps {
-                script {
-                    echo "☁️ Enviando relatório de cobertura para Codecov..."
-                    if (isUnix()) {
-                        sh 'curl -s https://codecov.io/bash | bash -s -- -t ${CODECOV_TOKEN}'
-                    } else {
-                        bat '''
-                            echo Baixando Codecov para Windows...
-                            curl -L -o codecov.exe https://uploader.codecov.io/latest/windows/codecov.exe
-                            echo Enviando relatório de cobertura...
-                            codecov.exe -t %CODECOV_TOKEN% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
-                        '''
-                    }
-                }
+                bat '''
+                    echo Baixando Codecov para Windows...
+                    curl -L -o codecov.exe https://uploader.codecov.io/latest/windows/codecov.exe
+
+                    echo Enviando cobertura...
+                    codecov.exe -t %CODECOV_TOKEN% -f build\\reports\\jacoco\\test\\jacocoTestReport.xml
+                '''
             }
         }
-        // =========================================================
-        // 7️⃣ DEPLOY WAR TO TOMCAT (Main/Master only)
-        // Cada Jenkins (macOS ou Windows) faz deploy no seu proprio Tomcat.
-        // Nao requer agentes com labels especificos.
-        // =========================================================
-        stage('Deploy WAR to Tomcat') {
+
+        stage('Deploy WAR to Tomcat Windows') {
             when {
                 expression {
-                    def target    = (env.CHANGE_TARGET ?: '').toLowerCase()
-                    def branch    = (env.BRANCH_NAME   ?: '').toLowerCase()
-                    def gitBranch = (env.GIT_BRANCH    ?: '').toLowerCase()
-
-                    return ['main', 'master'].contains(target) ||
-                           ['main', 'master'].contains(branch) ||
-                           ['origin/main', 'origin/master', 'main', 'master'].contains(gitBranch)
+                    def gitBranch = (env.GIT_BRANCH ?: '').toLowerCase()
+                    return gitBranch == 'origin/main' || gitBranch == 'origin/master'
                 }
             }
-            options {
-                timeout(time: 10, unit: 'MINUTES')
-            }
+
             steps {
-                script {
-                    echo "🚀 Exportando WAR para o Tomcat (main/master) no node: ${env.NODE_NAME}..."
+                bat '''
+                    echo Procurando arquivo WAR em %WORKSPACE%\\build\\libs
 
-                    if (isUnix()) {
-                        sh '''
-                            SOURCE_WAR="$WORKSPACE/build/libs/gastos-mensais.war"
-                            TOMCAT_WEBAPPS="${TOMCAT_WEBAPPS:-/opt/homebrew/opt/tomcat/libexec/webapps}"
-                            DEST_WAR="$TOMCAT_WEBAPPS/gastos-mensais.war"
+                    for %%F in ("%WORKSPACE%\\build\\libs\\*.war") do (
+                        echo WAR encontrado: %%~nxF
 
-                            echo "Node: $NODE_NAME | SO: macOS/Linux"
-                            echo "Verificando WAR em: $SOURCE_WAR"
-                            [ -f "$SOURCE_WAR" ] || { echo "ERRO: WAR nao encontrado em $SOURCE_WAR"; exit 1; }
+                        echo Copiando para Tomcat...
+                        copy /Y "%%~fF" "%TOMCAT_WEBAPPS%\\%%~nxF"
 
-                            echo "Verificando diretorio Tomcat: $TOMCAT_WEBAPPS"
-                            [ -d "$TOMCAT_WEBAPPS" ] || { echo "ERRO: Diretorio Tomcat nao encontrado: $TOMCAT_WEBAPPS"; exit 1; }
+                        echo Deploy concluido em %TOMCAT_WEBAPPS%\\%%~nxF
+                        exit /b 0
+                    )
 
-                            echo "Copiando WAR para: $DEST_WAR"
-                            cp "$SOURCE_WAR" "$DEST_WAR"
-
-                            echo "✅ Deploy macOS concluido com sucesso em $DEST_WAR"
-                        '''
-                    } else {
-                        bat '''
-                            set SOURCE_WAR=%WORKSPACE%\\build\\libs\\gastos-mensais.war
-                            if "%TOMCAT_WEBAPPS%"=="" (
-                                set TOMCAT_WEBAPPS=C:\\apache-tomcat-11.0.11\\webapps
-                            )
-                            set DEST_WAR=%TOMCAT_WEBAPPS%\\gastos-mensais.war
-
-                            echo Node: %NODE_NAME% ^| SO: Windows
-                            echo Verificando WAR em: %SOURCE_WAR%
-                            if not exist "%SOURCE_WAR%" (
-                                echo ERRO: WAR nao encontrado em %SOURCE_WAR%
-                                exit /b 1
-                            )
-
-                            echo Verificando diretorio Tomcat: %TOMCAT_WEBAPPS%
-                            if not exist "%TOMCAT_WEBAPPS%" (
-                                echo ERRO: Diretorio Tomcat nao encontrado: %TOMCAT_WEBAPPS%
-                                exit /b 1
-                            )
-
-                            echo Copiando WAR para: %DEST_WAR%
-                            copy /Y "%SOURCE_WAR%" "%DEST_WAR%"
-
-                            echo Deploy Windows concluido com sucesso em %DEST_WAR%
-                        '''
-                    }
-                }
+                    echo ERRO: Nenhum WAR encontrado em %WORKSPACE%\\build\\libs
+                    exit /b 1
+                '''
             }
         }
     }
 
-    // =========================================================
-    // 🔄 POST ACTIONS
-    // =========================================================
     post {
         always {
-            echo '✅ Pipeline concluído.'
+            echo 'Pipeline concluído.'
         }
+
         success {
-            echo '🎉 Todos os stages executados com sucesso!'
+            echo 'Todos os stages executados com sucesso!'
         }
+
         failure {
-            echo '❌ Falha detectada no pipeline. Verifique os logs.'
+            echo 'Falha detectada no pipeline. Verifique os logs.'
         }
     }
 }
