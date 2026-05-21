@@ -37,7 +37,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> response = handler.handleValidationErrors(exception);
 
         // 🔹 Verifica status e estrutura
-        assertThat(response.getStatusCodeValue()).isEqualTo(400);
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().get("error")).isEqualTo("Erro de validação");
         assertThat(response.getBody().get("status")).isEqualTo(400);
@@ -55,7 +55,7 @@ class GlobalExceptionHandlerTest {
 
         ResponseEntity<Map<String, String>> response = handler.handleRuntime(ex);
 
-        assertThat(response.getStatusCodeValue()).isEqualTo(500);
+        assertThat(response.getStatusCode().value()).isEqualTo(500);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().get("erro")).isEqualTo("Erro interno inesperado");
     }
