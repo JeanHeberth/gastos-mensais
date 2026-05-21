@@ -15,8 +15,5 @@ COPY build/libs/${WAR_FILE} /usr/local/tomcat/webapps/${WAR_FILE}
 # Expondo a porta padrão do Tomcat
 EXPOSE 8089
 
-# Altera a porta do Tomcat de 8080 para 8089 no server.xml
-RUN sed -i 's/port="8080"/port="8089"/g' /usr/local/tomcat/conf/server.xml
-
 # Comando padrão: inicia o Tomcat
 CMD ["catalina.sh", "run"]
